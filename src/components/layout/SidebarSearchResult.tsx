@@ -46,7 +46,7 @@ export default function SidebarSearchResult({
           }
         : {})}
     >
-      <h3>Search messages for Test{sideBarSearchText}</h3>
+      <h3>Search messages for {sideBarSearchText}</h3>
 
       {getAllUserArray?.length > 0 && <h4 className="h4Text">More people</h4>}
 
