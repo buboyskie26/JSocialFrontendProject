@@ -1,14 +1,15 @@
 import axios from "axios";
-//
+
 const SERVER_LOCAL = "http://localhost:3000/api";
-// Updated code should be pushed in repository
-const SERVER_CLOUD =
-  "https://jsocialbackendproject-deployment.onrender.com/api";
+const SERVER_CLOUD = import.meta.env.VITE_API_URL;
+
+// ✅ Fallback to local if env variable is not set (for development)
+const BASE_URL = SERVER_CLOUD || SERVER_LOCAL;
 
 const api = axios.create({
-  // baseURL: `${SERVER_LOCAL}`, // CLOUD SERVER backend URL
-  baseURL: `${SERVER_CLOUD}`, // LOCAL SERVER backend URL
+  baseURL: BASE_URL,
   withCredentials: true, // ✅ allow cookies
+  // timeout: 10000, // 10 second timeout
 });
 
 // Add interceptor to attach token to all requests
@@ -24,17 +25,19 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
 // ✅ Handle 401 errors (expired token)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // console.log("401 error");
-      // Token expired or invalid
+      console.log("401 error - Token expired or invalid");
       localStorage.removeItem("token");
-      // window.location.href = "/login"; // Redirect to login
+      // Uncomment if you want automatic redirect:
+      // window.location.href = "/login";
     }
     return Promise.reject(error);
   }
 );
+
 export default api;
