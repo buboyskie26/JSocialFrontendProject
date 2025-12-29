@@ -1,22 +1,32 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaRegSmile, FaReply } from "react-icons/fa";
 import { FaEllipsis } from "react-icons/fa6";
+import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
+import { setShowMenu } from "../../app/slices/messagesSlice";
 
 export default function MessageActionsMenu({
+  // showMenu,
+  // setShowMenu,
   isSender,
   onReplyClick,
   onEditClick,
   onRemoveClick,
+  //
+  onEllipsisClick,
 }: any) {
   //
   const [showMenu, setShowMenu] = useState(false);
+
+  // const showMenu = useSelector((w) => w.messages.showMenu);
+  const dispatch = useDispatch();
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   // Close the menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        // dispatch(setShowMenu(false));
         setShowMenu(false);
       }
     };
@@ -25,11 +35,23 @@ export default function MessageActionsMenu({
   }, []);
 
   function showActions(isLeftPosition) {
+    //
+
+    //
     const ellipsisAction = (
       <div
         className="cursor-pointer ellipsisContainer"
         title="More"
-        onClick={() => setShowMenu((prev) => !prev)}
+        onClick={() => {
+          setShowMenu((prev) => !prev);
+          onEllipsisClick();
+          // dispatch(setShowMenu(!showMenu));
+          // if (showMenu) {
+          //   dispatch(setShowMenu(false));
+          // } else {
+          //   dispatch(setShowMenu(true));
+          // }
+        }}
       >
         <FaEllipsis className="ellipsis" />
       </div>
@@ -71,11 +93,14 @@ export default function MessageActionsMenu({
 
       {showActions(isSender)}
       {/* Menu */}
+
       {showMenu && (
         <MenuContainer ref={menuRef}>
           <MenuItem
             onClick={() => {
+              // dispatch(setShowMenu(false));
               setShowMenu(false);
+
               onRemoveClick();
             }}
           >

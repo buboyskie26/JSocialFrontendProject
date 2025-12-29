@@ -18,7 +18,7 @@ export default function ChatWindowReply({ chat_display_name }: Props) {
   const textMessageIsEditing = useSelector(
     (w) => w.messages.textMessageIsEditing
   );
-  console.log({ getMessageData });
+  // console.log({ getMessageData });
 
   //   useEffect(() => {
   //     console.log({ getMessageData });

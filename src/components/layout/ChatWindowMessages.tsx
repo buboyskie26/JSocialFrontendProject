@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import MessageActionsMenu from "../shared/MessageActionsMenu";
 import styled from "styled-components";
@@ -14,11 +14,10 @@ import {
 
 interface Props {
   // isUserReplying: any;
-  loggedInUserId: any;
+  loggedInUserId: string;
   conversationId: number;
 }
 export default function ChatWindowMessages({
-  // isUserReplying,
   conversationId,
   loggedInUserId,
 }: Props) {
@@ -27,67 +26,121 @@ export default function ChatWindowMessages({
     (w) => w.messages.getMessageData,
     shallowEqual
   );
-  console.log({ getMessageData });
+  // console.log({ getMessageData });
   const dispatch = useDispatch();
-  const bottomRef = useRef<HTMLDivElement | null>(null);
-  console.log("ChatWindowMessages");
+  // console.log("ChatWindowMessages");
+
+  const enteredRightSidebarText = useSelector(
+    (w) => w.messages.enteredRightSidebarText
+  );
+  // console.log({ enteredRightSidebarText });
+
   const messages = useSelector((w) => w.messages.individualMessages);
-  //
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const messageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  // const messageRefs = useRef({});
+
+  const scrollToMessageId = useSelector((w) => w.messages.scrollToMessageId);
+
+  // const scrollToMessageId = 32;
+
+  // Scroll to bottom when messages change
   useEffect(() => {
-    console.log({ messages });
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!scrollToMessageId) {
+      bottomRef.current?.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages, scrollToMessageId]);
+
+  //
+  // Small delay to ensure DOM is ready
+  useEffect(() => {
+    // console.log({ messageRefs });
+    // Add a small delay to ensure refs are populated after render
+    const timer = setTimeout(() => {
+      if (scrollToMessageId && messageRefs.current[scrollToMessageId]) {
+        //
+        const messageElement = messageRefs.current[scrollToMessageId];
+        // console.log({ messageElement });
+
+        if (messageElement) {
+          messageElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+
+          messageElement.classList.add("highlight-message");
+
+          setTimeout(() => {
+            messageElement?.classList.remove("highlight-message");
+          }, 2000);
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [scrollToMessageId, messages]); // Added messages to trigger when messages load
 
   //
   async function removeSingleMessage(messageId: number) {
     if (!messageId) return;
-    console.log("hitt");
     try {
       const responseData = await dispatch(
         deleteMessage({ messageId })
       ).unwrap();
-      console.log({ responseData });
+      // console.log({ responseData });
       if (responseData) {
         //
         //
-        dispatch(
-          getIndividualMessages({
-            conversationId,
-          })
-        );
+        if (conversationId)
+          dispatch(
+            getIndividualMessages({
+              conversationId,
+            })
+          );
       }
     } catch (error) {
       console.error("Error: " + error);
     }
   }
+
+  const [hoverMessageId, setHoverMessageId] = useState(null);
+  const [clickedMessageAction, setClickedMessageAction] = useState(null);
+  // console.log({ clickedMessageAction });
   //
   function showMessagesFormat(
     positionMessage: string,
     item: any,
-    isLastOfGroup = false
+    isLastOfGroup = false,
+    clickedMessageAction,
+    setClickedMessageAction
   ) {
+    //
+    // const [showMenu, setShowMenu] = useState(false);
+
+    // console.log({ clickedMessageAction });
+    //
     //
     const messageAction = (
       <MessageActionsMenu
+        // showMenu={showMenu}
+        // setShowMenu={setShowMenu}
         isSender={item.sender_id === loggedInUserId}
         onReplyClick={() => {
           dispatch(setGetMessageData(item));
-          // console.log("click v2");
         }}
         onEditClick={() => {
           dispatch(setGetMessageData(item));
           dispatch(setTextMessageIsEditing(true));
-
           // console.log("click v2");
         }}
         onRemoveClick={async () => {
           //
           if (window.confirm("Are you sure you want to remove this?")) {
-            //
             await removeSingleMessage(item.id);
-            //
           }
-          // console.log("click v2");
+        }}
+        onEllipsisClick={() => {
+          setClickedMessageAction(item?.id);
         }}
       />
     );
@@ -97,6 +150,50 @@ export default function ChatWindowMessages({
     const replyMessage = item.reply_message_content;
     //
     // Left side of Chat Messages.
+
+    // if (hoverMessageId === item?.id) console.log({ hoverMessageId });
+
+    // const showMessageAction = hoverMessageId === item?.id && messageAction;
+    //
+    const showMessageAction =
+      (clickedMessageAction !== item?.id &&
+        hoverMessageId === item?.id &&
+        messageAction) ||
+      (clickedMessageAction === item?.id && messageAction);
+
+    //
+    //
+    function escapeRegExp(text) {
+      return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+    }
+    function highlightText(text: string, searchText: string) {
+      // if (!searchText) return truncateText(text);
+
+      // const truncated = truncateText(text, 35);
+
+      // Split search text into words
+      const words = searchText
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(escapeRegExp);
+
+      if (words.length === 0) return text;
+
+      // Create regex like: (Hello|lady|beautiful|rosa)
+      const regex = new RegExp(`(${words.join("|")})`, "gi");
+
+      return text.split(regex).map((part: string, index: number) =>
+        regex.test(part) ? (
+          <span key={index} className="highlightText">
+            {part}
+          </span>
+        ) : (
+          <React.Fragment key={index}>{part}</React.Fragment>
+        )
+      );
+    }
+    //
     //
     if (positionMessage === "left") {
       return (
@@ -104,52 +201,29 @@ export default function ChatWindowMessages({
           <div className="topImageDiv">
             {isLastOfGroup && <img src={janeDoeImage} />}
           </div>
-
-          {/* {hasReplyMessage ? (
-            <div className="w-full">
-              <span>Has reply</span>
-              <MessageTextDiv
-                style={{ marginRight: "5px" }}
-                isSender={isSender}
-              >
-                {item.content}
-              </MessageTextDiv>
-              {messageAction}
-            </div>
-          ) : (
-            <>
-              <MessageTextDiv
-                style={{ marginRight: "5px" }}
-                isSender={isSender}
-              >
-                {item.content}
-              </MessageTextDiv>
-              {messageAction}
-            </>
-          )} */}
-
           {replyMessage ? (
             <>
               <div
-                // style={{ marginBottom: "3rem" }}
                 className={`relative flex w-full justify-start items-end flex-col `}
               >
-                <div
-                  className="flex w-full justify-start"
-                  //  style={{ position: "absolute", top: "-36px" }}
-                >
+                <div className="flex w-full justify-start">
                   <ReplyMessageTextDiv>{replyMessage}</ReplyMessageTextDiv>
                 </div>
 
-                {/*  */}
                 <div className="flex w-full justify-start items-center-safe">
                   <MessageTextDiv
                     style={{ marginRight: "5px" }}
                     isSender={isSender}
+                    ref={(el) => {
+                      // Adding key value, please console log fo more reference.
+                      messageRefs.current[item?.id] = el;
+                    }}
                   >
-                    {item.content}
+                    {/* {item.content} */}
+                    {highlightText(item?.content, enteredRightSidebarText)}
                   </MessageTextDiv>
-                  {messageAction}
+                  {/* {messageAction} */}
+                  {showMessageAction}
                 </div>
               </div>
             </>
@@ -158,10 +232,16 @@ export default function ChatWindowMessages({
               <MessageTextDiv
                 style={{ marginRight: "5px" }}
                 isSender={isSender}
+                ref={(el) => {
+                  // Adding key value, please console log fo more reference.
+                  messageRefs.current[item?.id] = el;
+                }}
               >
-                {item.content}
+                {/* {item.content} */}
+                {highlightText(item?.content, enteredRightSidebarText)}
               </MessageTextDiv>
-              {messageAction}
+              {showMessageAction}
+              {/* {messageAction} */}
             </>
           )}
         </>
@@ -172,20 +252,24 @@ export default function ChatWindowMessages({
           {replyMessage ? (
             <>
               <div
-                // style={{ marginBottom: "3rem" }}
                 className={`relative flex w-full justify-end items-end flex-col `}
               >
-                <div
-                //  style={{ position: "absolute", top: "-36px" }}
-                >
+                <div>
                   <ReplyMessageTextDiv>{replyMessage}</ReplyMessageTextDiv>
                 </div>
-
-                {/*  */}
                 <div className="flex w-full justify-end items-center-safe">
+                  {/* {showMessageAction} */}
                   {messageAction}
-                  <MessageTextDiv isSender={isSender}>
-                    {item.content}
+
+                  <MessageTextDiv
+                    isSender={isSender}
+                    ref={(el) => {
+                      // Adding key value, please console log fo more reference.
+                      messageRefs.current[item?.id] = el;
+                    }}
+                  >
+                    {/* {item.content} */}
+                    {highlightText(item?.content, enteredRightSidebarText)}
                   </MessageTextDiv>
                 </div>
               </div>
@@ -193,8 +277,17 @@ export default function ChatWindowMessages({
           ) : (
             <>
               {messageAction}
-              <MessageTextDiv isSender={isSender}>
-                {item.content}
+              {/* {showMessageAction} */}
+
+              <MessageTextDiv
+                isSender={isSender}
+                ref={(el) => {
+                  // Adding key value, please console log fo more reference.
+                  messageRefs.current[item?.id] = el;
+                }}
+              >
+                {/* {item.content} */}
+                {highlightText(item?.content, enteredRightSidebarText)}
               </MessageTextDiv>
             </>
           )}
@@ -202,6 +295,8 @@ export default function ChatWindowMessages({
       );
     }
   }
+
+  //
   //
   return (
     <MessengerContentStyled
@@ -211,51 +306,58 @@ export default function ChatWindowMessages({
       <div className="messageContainer">
         {messages.length > 0 &&
           messages.map((item, index) => {
-            //
             const nextMessage = messages[index + 1];
-
             // Is from other user?
             const isOther = item.sender_id !== loggedInUserId;
-
             // Is last message of their cluster?
             const isLastOfGroup =
               !nextMessage || nextMessage.sender_id !== item.sender_id;
-
             // This is the ID you want:
             const isOtherLastMessageId =
               isOther && isLastOfGroup ? item.id : null;
-
             // Check if the next has no reply.
             const nextOwnedMessageHasNoReply =
               !nextMessage || nextMessage.sender_id === item.sender_id;
 
-            const test =
-              loggedInUserId === item.sender_id &&
-              item.reply_message_content &&
-              item;
-            //
-            console.log({ test });
-
-            const replyMessage = item.reply_message_content;
-
             return (
-              <>
+              <React.Fragment key={item?.id}>
                 {isOther ? (
                   <div
-                    key={item.id}
-                    className="messegeTextContainer  w-full flex justify-start"
+                    onMouseEnter={() => {
+                      setHoverMessageId(item?.id);
+                    }}
+                    onMouseLeave={() => {
+                      setHoverMessageId(null);
+                    }}
+                    className="messegeTextContainer message-item w-full flex justify-start"
                   >
-                    {showMessagesFormat("left", item, isLastOfGroup)}
+                    {showMessagesFormat(
+                      "left",
+                      item,
+                      isLastOfGroup,
+                      clickedMessageAction,
+                      setClickedMessageAction
+                    )}
                   </div>
                 ) : (
                   <div
-                    key={item.id}
-                    className={`messegeTextContainer flex w-full justify-end`}
+                    onMouseEnter={() => {
+                      setHoverMessageId(item?.id);
+                    }}
+                    onMouseLeave={() => {
+                      setHoverMessageId(null);
+                    }}
+                    className="messegeTextContainer message-item flex w-full justify-end"
                   >
-                    {showMessagesFormat("right", item)}
+                    {showMessagesFormat(
+                      "right",
+                      item,
+                      clickedMessageAction,
+                      setClickedMessageAction
+                    )}
                   </div>
                 )}
-              </>
+              </React.Fragment>
             );
           })}
         <div ref={bottomRef} />
@@ -268,6 +370,30 @@ const MessengerContentStyled = styled.div`
   box-sizing: border-box;
   height: ${({ hasReplyDiv }) => (hasReplyDiv ? "70vh" : "80vh")};
 
+  /**/
+  /*
+
+  .message-item-item {
+    transition: background-color 0.3s ease;
+    padding: 10px;
+    margin: 5px 0;
+  }
+
+  .highlight-message {
+    background-color: #ffeb3b !important;
+    animation: highlight-fade 2s ease-in-out !important;
+  }
+
+  @keyframes highlight-fade {
+    0% {
+      background-color: #ffeb3b !important;
+    }
+    100% {
+      background-color: transparent !important;
+    }
+  }
+  */
+  /**/
   .messegeTextContainer {
     display: flex;
     align-items: center;
@@ -329,6 +455,31 @@ const MessengerContentStyled = styled.div`
 `;
 
 const MessageTextDiv = styled.div`
+  &.highlight-message {
+    border: 5px solid green !important;
+    animation: highlight-bounce 2s ease-in-out !important;
+  }
+
+  .highlightText {
+    color: #fff !important;
+    font-weight: 600 !important;
+  }
+
+  @keyframes highlight-bounce {
+    0% {
+      transform: scale(1);
+    }
+    10% {
+      transform: scale(1.4);
+    }
+    50% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
   z-index: 1;
   max-width: 60%;
   padding: 10px 14px;

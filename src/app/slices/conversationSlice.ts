@@ -55,6 +55,23 @@ export const addConversation = createAsyncThunk(
   }
 );
 
+export const checkRecentSearchHasConvo = createAsyncThunk(
+  "conversation/checkRecentSearchHasConvo",
+  async (data, thunkAPI: any) => {
+    try {
+      const response = await axios.get(
+        `/conversations/checkRecentSearchHasConvo/${data?.otherUserId}`
+      );
+      console.log({ response });
+      return response.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.response?.data?.error || "Error occured."
+      );
+    }
+  }
+);
+
 const conversationSlice = createSlice({
   name: "conversation",
   initialState,

@@ -1,13 +1,18 @@
 import React from "react";
 import { FaEllipsis } from "react-icons/fa6";
 import janeDoeImage from "../../assets/jane_doe_sample.png";
+import { setIsRightSideBarOpen } from "../../app/slices/sharedSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 interface Props {
   conversationObject: any | null;
 }
 export default function ChatWindowTop({ conversationObject }: Props) {
   //
-  console.log("ChatWindowTop");
+  const dispatch = useDispatch();
+  const isRightSideBarOpen = useSelector((w) => w.shared.isRightSideBarOpen);
+
+  // console.log("ChatWindowTop");
   return (
     <div style={{ height: "10vh" }} className="topContentContainer p-4">
       <div className="topLeft">
@@ -22,7 +27,12 @@ export default function ChatWindowTop({ conversationObject }: Props) {
         </div>
       </div>
 
-      <div className="topRight">
+      <div
+        className="topRight"
+        onClick={() => {
+          dispatch(setIsRightSideBarOpen(!isRightSideBarOpen));
+        }}
+      >
         <FaEllipsis className="ellipsis" />
       </div>
     </div>

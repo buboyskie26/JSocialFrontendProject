@@ -1,14 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaSearch, FaTimes } from "react-icons/fa";
-import { FaLeftLong } from "react-icons/fa6";
+import { FaLeftLong, FaSpinner } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { setSearchInputFocused } from "../../app/slices/sharedSlice";
+import {
+  getAllUsersBySearch,
+  setShowRecentSearch,
+} from "../../app/slices/authSlice";
 
 export default function SearchUser({
   inputRef,
   focusContainerRef,
-  query,
+  sideBarSearchText,
   handleChange,
   handleBlur,
   handleClear,
@@ -17,10 +21,13 @@ export default function SearchUser({
   const dispatch = useDispatch();
   const searchInputFocused = useSelector((w) => w.shared.searchInputFocused);
 
+  // Loading for Sidebar Search Icon
+  const isLoading = useSelector((w) => w.auth.getAllUserLoading);
+
   //
-  useEffect(() => {
-    console.log({ searchInputFocused });
-  }, [searchInputFocused]);
+  // useEffect(() => {
+  //   console.log({ loading });
+  // }, [loading]);
   // const [isInputFocused, setIsInputFocused] = useState(false);
   // const [query, setQuery] = useState("");
 
@@ -42,6 +49,97 @@ export default function SearchUser({
   //   dispatch(setSearchInputFocused(false));
   // };
   //
+  //
+  const [isTyping, setIsTyping] = useState(false);
+  // If frontend detects backend fetching, changed the <FaSearch to Loading
+  // if (sideBarSearchText.length > 1) {
+  // }
+
+  // const [isLoading, setIsLoading] = useState(false);
+
+  // Debounce effect
+  // useEffect(() => {
+  //   if (sideBarSearchText.length <= 1) return;
+
+  //   setIsTyping(true);
+
+  //   if (sideBarSearchText.length > 1) {
+  //     const timer = setTimeout(() => {
+  //       // User STOPPED typing
+  //       setIsTyping(false);
+  //       setIsLoading(false);
+  //       // dispatch(
+  //       //   getAllUsersBySearch({
+  //       //     searchQuery: sideBarSearchText,
+  //       //   })
+  //       // );
+  //     }, 500); // 500ms debounce
+
+  //     return () => {
+  //       clearTimeout(timer);
+  //       setIsLoading(true);
+  //     };
+  //   }
+  // }, [sideBarSearchText]);
+  // useEffect(() => {
+  //   if (sideBarSearchText.length <= 1) {
+  //     setIsTyping(false);
+  //     setIsLoading(false);
+  //     return;
+  //   }
+
+  //   setIsTyping(true); // user is typing...
+  //   setIsLoading(true); // don't show loading while typing
+
+  //   const timer = setTimeout(() => {
+  //     // User STOPPED typing for 500ms
+  //     setIsTyping(false);
+  //     setIsLoading(true); // now we show loading
+
+  //     // Call API here
+  //     dispatch(
+  //       getAllUsersBySearch({
+  //         searchQuery: sideBarSearchText,
+  //       })
+  //     ).finally(() => {
+  //       setIsLoading(false); // when API finishes
+  //     });
+  //   }, 1000);
+
+  //   return () => {
+  //     clearTimeout(timer);
+  //     // DO NOT set loading here (this fires during typing!)
+  //   };
+  // }, [sideBarSearchText]);
+
+  useEffect(() => {
+    if (sideBarSearchText.length < 1) return;
+
+    setIsTyping(true);
+    dispatch(setShowRecentSearch(false));
+    const timer = setTimeout(() => {
+      // console.log("user has stopped.");
+
+      // User STOPPED typing
+      setIsTyping(false);
+      dispatch(setShowRecentSearch(true));
+      dispatch(
+        getAllUsersBySearch({
+          searchQuery: sideBarSearchText,
+        })
+      );
+    }, 1000); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [sideBarSearchText]);
+  
+  // console.log({ isLoading });
+  //
+  const showLoadingIcon = isLoading && !isTyping;
+  // const showLoadingIcon = isLoading ;
+
+  //
+  //
   return (
     <SearchBarContainer isInputFocused={searchInputFocused === true}>
       {searchInputFocused && (
@@ -50,10 +148,13 @@ export default function SearchUser({
         </div>
       )}
       <div className="searchBarContainer">
-        <FaSearch className="searchIcon" />
+        {/* <FaSearch className="searchIcon" /> */}
+        {/* <FaSpinner className="searchIcon" /> */}
+        {showLoadingIcon ? <FaSpinner /> : <>{<FaSearch />}</>}
+
         <input
           ref={inputRef}
-          value={query}
+          value={sideBarSearchText}
           // onChange={(e) => setQuery(e.target.value)}
           onChange={handleChange}
           onFocus={() => {
@@ -64,7 +165,7 @@ export default function SearchUser({
           type="text"
           placeholder="Search Messenger"
         />
-        {query && (
+        {sideBarSearchText && (
           <div
             className="closeSearchContainer"
             onClick={handleClear}

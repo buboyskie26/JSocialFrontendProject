@@ -14,11 +14,14 @@ import styled from "styled-components";
 import {
   addMessage,
   getIndividualMessages,
+  getUserMessages,
+  sendMessageToUser,
   setGetMessageData,
   setIsUserReplying,
   setTextMessageInput,
   updateMessage,
 } from "../../app/slices/messagesSlice";
+import { setSelectedConversation } from "../../app/slices/conversationSlice";
 
 interface Props {
   conversationObject: any;
@@ -40,9 +43,15 @@ Props) {
   );
   const messageContent = getMessageData?.content || "";
   const message_id = getMessageData?.id || null;
-  //
-  // const [textInput, setTextInput] = useState<string>();
 
+  //
+  const selectedConversation = useSelector(
+    (w) => w.conversation.selectedConversation
+  );
+  useEffect(() => {
+    console.log({ selectedConversation });
+  }, [selectedConversation]);
+  //
   useEffect(() => {
     // Auto focus textarea
     textareaRef.current?.focus();
@@ -64,38 +73,79 @@ Props) {
   }, [textMessageInput]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey && conversationId) {
-      e.preventDefault();
+    //
+    // if (e.key === "Enter" && !e.shiftKey && conversationId) {
+    //   e.preventDefault();
 
+    //   //
+    //   if (textMessageInput.trim().length > 0) {
+    //     handleSendMessage();
+    //   }
+    // }
+    //
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      //
       if (textMessageInput.trim().length > 0) {
         handleSendMessage();
       }
     }
+    //  if (e.key === "Enter" && !e.shiftKey && !conversationId) {
+    //   // Handled the backend. Do not assume the next id, should handle by the backend.
+    // }
   }
   const handleSendMessage = async () => {
-    if (!textMessageInput.trim() || !conversationObject?.chat_user_id) return;
+    // if (!textMessageInput.trim() || !conversationObject?.chat_user_id) return;
+    if (!textMessageInput.trim()) return;
 
     const trimmedMsg = textMessageInput.trim();
 
     console.log("Message sent:", textMessageInput);
-
+    // console.log({ conversationObject });
+    // return;
     try {
+      // Creating
       if (!textMessageIsEditing) {
+        //
         const data = await dispatch(
           // addConversation({
-          addMessage({
-            chatUserId: conversationObject.chat_user_id,
-            messageContent: trimmedMsg,
-            replyToMessageId: message_id,
+          // addMessage({
+          //   chatUserId: conversationObject.chat_user_id,
+          //   messageContent: trimmedMsg,
+          //   replyToMessageId: message_id,
+          // })
+          sendMessageToUser({
+            // receiverId: conversationObject.chat_user_id,
+            receiverId: selectedConversation?.chat_user_id,
+            content: trimmedMsg,
+            messageType: "individual",
           })
         ).unwrap();
+
+        //
         if (data?.data && data.data?.id) {
           //
-          dispatch(
-            getIndividualMessages({
-              conversationId,
-            })
-          );
+          if (data?.isNewConversation === true) {
+            dispatch(
+              setSelectedConversation({
+                ...selectedConversation,
+                conversation_id: data?.data?.conversation_id,
+                type: data?.data?.message_type,
+              })
+            );
+          }
+          // Refresh datas.
+          if (conversationId)
+            dispatch(
+              getIndividualMessages({
+                conversationId,
+              })
+            );
+          // This will refresh the User Chat Messages (Left)
+          // if this hits, the loadingUserMessages should be false.
+          dispatch(getUserMessages({ skipLoading: true }));
+          //
+          // Reset
           dispatch(setGetMessageData(null));
           dispatch(setTextMessageInput(""));
           //
@@ -116,14 +166,15 @@ Props) {
           //
           dispatch(setGetMessageData(null));
           dispatch(setTextMessageInput(""));
-          dispatch(
-            getIndividualMessages({
-              conversationId,
-            })
-          );
+          if (conversationId)
+            dispatch(
+              getIndividualMessages({
+                conversationId,
+              })
+            );
           //
         }
-        console.log({ data });
+        // console.log({ data });
         //
       }
     } catch (error) {
@@ -145,22 +196,14 @@ Props) {
         </div>
 
         <div className="messageBoxContainer">
-          {/* <input
-              value={textInput}
-              onChange={(e) => {
-                setTextInput(e.target.value);
-              }}
-              type="text"
-              placeholder="Aa"
-            /> */}
           <textarea
             onKeyDown={handleKeyDown}
             ref={textareaRef}
             value={textMessageInput}
             onChange={(e) => {
-              if (conversationId) {
-                dispatch(setTextMessageInput(e.target.value));
-              }
+              // if (conversationId) {
+              dispatch(setTextMessageInput(e.target.value));
+              // }
             }}
             placeholder="Aa"
             rows={1}

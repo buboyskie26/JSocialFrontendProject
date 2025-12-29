@@ -1,18 +1,19 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import axios from "../../utils/axiosConfig"; // 
+import axios from "../../utils/axiosConfig"; //
 
 // Define the state type
 interface SharedState {
   searchInputFocused: boolean;
+  isRightSideBarOpen: boolean;
 }
 
 // Define the initial state
 const initialState: SharedState = {
   searchInputFocused: false,
+  isRightSideBarOpen: false,
 };
 
 // Todo. Create a Global Loading.
-
 
 // Create the slice
 const sharedSlice = createSlice({
@@ -23,9 +24,13 @@ const sharedSlice = createSlice({
     setSearchInputFocused: (state, action: PayloadAction<boolean>) => {
       state.searchInputFocused = action.payload;
     },
+    setIsRightSideBarOpen: (state, action: PayloadAction<boolean>) => {
+      state.isRightSideBarOpen = action.payload;
+    },
   },
 });
 
 // Export actions and reducer
-export const { setSearchInputFocused } = sharedSlice.actions;
+export const { setSearchInputFocused, setIsRightSideBarOpen } =
+  sharedSlice.actions;
 export default sharedSlice.reducer;

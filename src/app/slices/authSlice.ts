@@ -10,6 +10,8 @@ interface AuthState {
 
   getAllUserLoading: boolean;
   getAllUserArray: any | null;
+
+  showRecentSearch: boolean;
 }
 
 const initialState: AuthState = {
@@ -20,6 +22,9 @@ const initialState: AuthState = {
   //
   getAllUserLoading: false,
   getAllUserArray: null,
+
+  // Handles the timing of reflecting the your contacts
+  showRecentSearch: false,
 };
 
 // ✅ Checks current session via cookie
@@ -45,6 +50,9 @@ export const loginUser = createAsyncThunk(
       // return await AuthService.login(credentials);
       // console.log({ credentials });
       const response = await axios.post("/auth/loginUser", credentials);
+      if (response?.data?.token)
+        localStorage.setItem("token", response.data.token);
+
       console.log({ response });
       return response.data; // { token, user }
     } catch (err: any) {
@@ -92,6 +100,9 @@ export const logoutUser = createAsyncThunk(
     try {
       // return await AuthService.login(credentials);
       const response = await axios.post("/auth/logoutUser");
+
+      localStorage.removeItem("token");
+
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(err.message);
@@ -107,6 +118,9 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       localStorage.removeItem("token");
+    },
+    setShowRecentSearch: (state, action) => {
+      state.showRecentSearch = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -127,7 +141,7 @@ const authSlice = createSlice({
         state.getAllUserLoading = true;
       })
       .addCase(getAllUsersBySearch.fulfilled, (state, action) => {
-        state.loading = false;
+        state.getAllUserLoading = false;
         state.getAllUserArray = action.payload?.data;
       })
       .addCase(getAllUsersBySearch.rejected, (state) => {
@@ -146,5 +160,5 @@ const authSlice = createSlice({
   //   extraReducers: (builder) => {},
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setShowRecentSearch } = authSlice.actions;
 export default authSlice.reducer;

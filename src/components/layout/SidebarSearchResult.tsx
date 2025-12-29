@@ -8,26 +8,38 @@ import {
   addUpdateRecentSearches,
   getUserRecentSearches,
 } from "../../app/slices/recentSearchesSlice";
+import { setSearchInputFocused } from "../../app/slices/sharedSlice";
+import {
+  getIndividualMessages,
+  setIndividualMessages,
+  setTextMessageInput,
+} from "../../app/slices/messagesSlice";
+import { setSelectedConversation } from "../../app/slices/conversationSlice";
 
 interface SidebarSearchResultProps {
   sideBarSearchText: string;
   focusContainerRef: any;
-  searchInputFocused: any;
+  removeSearchText: any;
+  conversationId: number;
 }
 
 export default function SidebarSearchResult({
   sideBarSearchText,
   focusContainerRef,
-  searchInputFocused,
+  removeSearchText,
+  conversationId,
 }: SidebarSearchResultProps) {
   //
   const getAllUserArray = useSelector((w) => w.auth.getAllUserArray);
+  const showRecentSearch = useSelector((w) => w.auth.showRecentSearch);
+  //
 
-  console.log({ getAllUserArray });
-
+  // console.log({ getAllUserArray });
   const dispatch = useDispatch();
 
+  // Only search after the debounce.
   useEffect(() => {
+    console.log("hitt");
     dispatch(
       getAllUsersBySearch({
         searchQuery: sideBarSearchText,
@@ -35,10 +47,37 @@ export default function SidebarSearchResult({
     );
   }, [dispatch, sideBarSearchText]);
 
+  const showRecentSearchResult =
+    getAllUserArray &&
+    // showRecentSearch &&
+    getAllUserArray.length > 0;
+
+  function handleClickConvoNoMessageState(item) {
+    // Part of reset. (wrap to function)
+    dispatch(
+      setSelectedConversation({
+        // Null as default.
+        conversation_id: null,
+        // default
+        type: "individual",
+        group_name: null,
+        last_message_id: null,
+        last_message: "",
+        last_message_time: "",
+        chat_user_id: item?.id,
+        chat_username: item?.username,
+        chat_display_name: item?.username,
+        chat_profile_image: null,
+      })
+    );
+
+    dispatch(setTextMessageInput(""));
+    dispatch(setIndividualMessages([]));
+  }
   //
   return (
     <StyledDiv
-      {...(searchInputFocused
+      {...(true
         ? {
             ref: focusContainerRef,
             tabIndex: -1,
@@ -48,10 +87,9 @@ export default function SidebarSearchResult({
     >
       <h3>Search messages for {sideBarSearchText}</h3>
 
-      {getAllUserArray?.length > 0 && <h4 className="h4Text">More people</h4>}
+      {showRecentSearchResult && <h4 className="h4Text">More people</h4>}
 
-      {getAllUserArray &&
-        getAllUserArray.length > 0 &&
+      {showRecentSearchResult ? (
         getAllUserArray.map((item, index) => (
           <div className="container" key={index}>
             {/* Example Result */}
@@ -59,8 +97,11 @@ export default function SidebarSearchResult({
               displayName={item.display_name}
               imageSrc={johnDoeImage}
               addRecentSearch={async () => {
-                console.log("Add: " + item.id);
                 if (!item.id) return;
+
+                handleClickConvoNoMessageState(item);
+
+                //
 
                 const addData = async () => {
                   try {
@@ -70,21 +111,31 @@ export default function SidebarSearchResult({
                       })
                     ).unwrap();
 
-                    console.log({ responseData });
+                    // console.log({ responseData });
                     if (responseData) {
                       // Refresh.
                       dispatch(getUserRecentSearches());
+                      dispatch(setSearchInputFocused(false));
+                      //
+                      removeSearchText();
+                      //
                     }
                   } catch (error) {
                     console.log(error);
                   }
                 };
-
                 addData();
               }}
             />
           </div>
-        ))}
+        ))
+      ) : (
+        <>
+          <div className="w-full flex items-center justify-center text-center">
+            <span className="text-center">No results</span>
+          </div>
+        </>
+      )}
     </StyledDiv>
   );
 }

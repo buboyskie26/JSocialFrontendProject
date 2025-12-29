@@ -8,13 +8,20 @@ import { formatMessengerTime } from "../../utils/timeFormatter";
 import { FaTimes } from "react-icons/fa";
 import FocusContainer from "../shared/FocusContainer";
 import { setSearchInputFocused } from "../../app/slices/sharedSlice";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import {
   getUserMessages,
+  setEnteredRightSidebarText,
   setGetMessageData,
+  setIndividualMessages,
+  setIsSearchClicked,
+  setTextMessageInput,
   setTextMessageIsEditing,
 } from "../../app/slices/messagesSlice";
-import { setSelectedConversation } from "../../app/slices/conversationSlice";
+import {
+  checkRecentSearchHasConvo,
+  setSelectedConversation,
+} from "../../app/slices/conversationSlice";
 import SkeletonMessages from "./SkeletonMessages";
 import SkeletonChatThread from "./SkeletonChatThread";
 import {
@@ -42,7 +49,10 @@ interface ConversationItem {
   chat_display_name: string;
   chat_profile_image: string | null;
 }
-export default function Sidebar() {
+interface Props {
+  conversationId: any;
+}
+export default function Sidebar({ conversationId }: Props) {
   const chats = [
     { id: 1, name: "Ian Louie San Pedro", message: "Okay pedro..." },
     { id: 2, name: "ASE", message: "anu po Job ID..." },
@@ -51,7 +61,7 @@ export default function Sidebar() {
   const getUserRecentSearchesArray = useSelector(
     (w) => w.recentSearches.getUserRecentSearchesArray
   );
-
+  // console.log({ getUserRecentSearchesArray });
   const loadingSearches = useSelector((w) => w.recentSearches.loadingSearches);
 
   // const conversations2: ConversationItem[] = [
@@ -79,6 +89,7 @@ export default function Sidebar() {
   const loadingUserMessages = useSelector(
     (w) => w.messages.loadingUserMessages
   );
+  // const [loadingUserMessages, setLoadingUserMessages] = useState(true);
 
   // console.log({ getUserRecentSearchesArray });
 
@@ -90,7 +101,7 @@ export default function Sidebar() {
   useEffect(() => {
     if (searchInputFocused) {
       dispatch(getUserRecentSearches());
-      console.log("Hit getUserRecentSearches.");
+      // console.log("Hit getUserRecentSearches.");
     }
   }, [dispatch, searchInputFocused]);
 
@@ -98,9 +109,36 @@ export default function Sidebar() {
   //
   if (loadingUserMessages) return <SkeletonMessages />;
   // if (!loadingUserMessages) return <SkeletonChatThread />;
+  // useEffect(() => {
+  //   if (loadingUserMessages) {
+  //     setLoadingUserMessages(false);
+  //   }
+  // }, [loadingUserMessages]);
+
+  function handleClickConvoNoMessageState(item) {
+    // Part of reset. (wrap to function)
+    dispatch(
+      setSelectedConversation({
+        // Null as default.
+        conversation_id: null,
+        // default
+        type: "individual",
+        group_name: null,
+        last_message_id: null,
+        last_message: "",
+        last_message_time: "",
+        chat_user_id: item?.id,
+        chat_username: item?.username,
+        chat_display_name: item?.username,
+        chat_profile_image: null,
+      })
+    );
+
+    dispatch(setTextMessageInput(""));
+    dispatch(setIndividualMessages([]));
+  }
   //
 
-  //
   return (
     <StyledSidebar>
       {/* LEFT FIXED ICON COLUMN */}
@@ -121,7 +159,7 @@ export default function Sidebar() {
         <SearchUser
           inputRef={inputRef}
           focusContainerRef={focusContainerRef}
-          query={sideBarSearchText}
+          sideBarSearchText={sideBarSearchText}
           handleChange={(e) => {
             setSideBarSearchText(e.target.value);
           }}
@@ -211,8 +249,13 @@ export default function Sidebar() {
                             focusContainerRef={focusContainerRef}
                             addRecentSearch={async () => {
                               //
-                              console.log("Add: " + item.id);
+                              handleClickConvoNoMessageState(item);
+                              // ENd of reset top.
+
+                              // Reset
+                              // return;
                               if (!item.id) return;
+                              //
                               const addData = async () => {
                                 try {
                                   const responseData = await dispatch(
@@ -220,10 +263,15 @@ export default function Sidebar() {
                                       searchedUserId: item.id,
                                     })
                                   ).unwrap();
-                                  console.log({ responseData });
+                                  // console.log({ responseData });
                                   if (responseData) {
                                     // Refresh.
                                     dispatch(getUserRecentSearches());
+                                    // dispatch(
+                                    //   getIndividualMessages({
+                                    //     conversationId: "20",
+                                    //   })
+                                    // );
                                   }
                                 } catch (error) {
                                   console.log(error);
@@ -271,43 +319,53 @@ export default function Sidebar() {
                   )}
                 </div>
 
-                <div
-                  className="recentSearchesContainer"
-                  style={{ marginTop: "1rem" }}
-                >
-                  {/*  */}
-                  <h4 className="">Your contacts</h4>
+                {!loadingSearches && (
+                  <>
+                    <div
+                      className="recentSearchesContainer"
+                      style={{ marginTop: "1rem" }}
+                    >
+                      {/*  */}
+                      <h4 className="">Your contacts</h4>
 
-                  <FocusContainer
-                    displayName={"Jana Sirios"}
-                    imageSrc={johnDoeImage}
-                  />
+                      <FocusContainer
+                        displayName={"Jana Sirios"}
+                        imageSrc={johnDoeImage}
+                      />
 
-                  <FocusContainer
-                    displayName={"Sam pussy cat"}
-                    imageSrc={johnDoeImage}
-                  />
-                  <FocusContainer
-                    displayName={"Jana Sirios"}
-                    imageSrc={johnDoeImage}
-                  />
+                      <FocusContainer
+                        displayName={"Sam pussy cat"}
+                        imageSrc={johnDoeImage}
+                      />
+                      <FocusContainer
+                        displayName={"Jana Sirios"}
+                        imageSrc={johnDoeImage}
+                      />
 
-                  <FocusContainer
-                    displayName={"Sam pussy cat"}
-                    imageSrc={johnDoeImage}
-                  />
-                </div>
+                      <FocusContainer
+                        displayName={"Sam pussy cat"}
+                        imageSrc={johnDoeImage}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </>
         ) : (
           <>
+            {/* Shows the result of typed Search Messenger */}
             {searchInputFocused && sideBarSearchText.length > 0 && (
-              <SidebarSearchResult
-                sideBarSearchText={sideBarSearchText}
-                focusContainerRef={focusContainerRef}
-                searchInputFocused={searchInputFocused}
-              />
+              <>
+                <SidebarSearchResult
+                  sideBarSearchText={sideBarSearchText}
+                  focusContainerRef={focusContainerRef}
+                  removeSearchText={() => {
+                    setSideBarSearchText("");
+                  }}
+                  conversationId={conversationId}
+                />
+              </>
             )}
           </>
         )}
@@ -315,51 +373,48 @@ export default function Sidebar() {
         {!searchInputFocused && sideBarSearchText.length === 0 && (
           <>
             <div className="chatList">
-              {conversations.map((item, idx) => (
-                <div
-                  className="chatItem"
-                  key={idx}
-                  onClick={() => {
-                    dispatch(setSelectedConversation(item));
-                    dispatch(setGetMessageData(null));
-                    dispatch(setTextMessageIsEditing(false));
-                  }}
-                >
-                  <img src={item.chat_profile_image || johnDoeImage} />
+              {conversations.map((item, idx) => {
+                //
 
-                  <div className="text">
-                    <span className="name">{item.chat_display_name}</span>
-                    <span className="message">{item.last_message}</span>
+                const selectedConversation =
+                  conversationId === item?.conversation_id;
+
+                // console.log({ selectedConversation });
+                //
+                return (
+                  <div
+                    className={`chatItem ${
+                      selectedConversation ? "activeConversation" : ""
+                    }`}
+                    key={idx}
+                    onClick={() => {
+                      dispatch(setSelectedConversation(item));
+                      dispatch(setGetMessageData(null));
+                      dispatch(setTextMessageIsEditing(false));
+                      // Reset the text message in the Chat window message input
+                      dispatch(setTextMessageInput(""));
+                      // Reset the Right Sidebar state
+
+                      dispatch(setEnteredRightSidebarText(""));
+                      dispatch(setIsSearchClicked(false));
+                      // console.log();
+                      // dispatch(setIndividualMessages([]));
+                    }}
+                  >
+                    <img src={item.chat_profile_image || johnDoeImage} />
+
+                    <div className="text">
+                      <span className="name">{item.chat_display_name}</span>
+                      <span className="message">{item.last_message}</span>
+                    </div>
+
+                    <div className="meta">
+                      <span>{formatMessengerTime(item.last_message_time)}</span>
+                      <span className="status">🟢</span>
+                    </div>
                   </div>
-
-                  <div className="meta">
-                    <span>{formatMessengerTime(item.last_message_time)}</span>
-                    <span className="status">🟢</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {false && (
-          <>
-            <div className="chatList">
-              {conversations.map((item, idx) => (
-                <div className="chatItem" key={idx}>
-                  <img src={item.chat_profile_image || johnDoeImage} />
-
-                  <div className="text">
-                    <span className="name">{item.chat_display_name}</span>
-                    <span className="message">{item.last_message}</span>
-                  </div>
-
-                  <div className="meta">
-                    <span>{formatMessengerTime(item.last_message_time)}</span>
-                    <span className="status">🟢</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
@@ -368,117 +423,6 @@ export default function Sidebar() {
   );
 }
 
-const StyledDiv = styled.div`
-  box-sizing: border-box;
-  height: 100vh; /* full height of viewport (or adjust as needed) */
-
-  display: flex;
-
-  .leftSidebarContainer {
-    border: 1px solid green;
-    width: 20%;
-    background-color: #252020;
-  }
-
-  .leftSidebarContainer .sideBarImageDiv {
-    margin-bottom: 1rem;
-    cursor: pointer;
-  }
-  /* Design for Focused */
-
-  .focusContainer {
-    padding: 4px 1rem;
-    padding-right: 0px;
-  }
-  .recentSearchesContainer {
-    font-weight: bold;
-    color: #ccc;
-    font-size: 18px;
-  }
-
-  .recentSearchesContentDiv {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-  }
-  .recentSearchesItemImageDiv {
-    width: 45px;
-    height: 45px;
-    flex-shrink: 0; /* prevents shrinking */
-  }
-  .recentSearchesItemImageDiv img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-
-  .message_timestamp {
-    font-size: 13px;
-    color: #ccc;
-  }
-  .user_status {
-    font-size: 8px;
-  }
-  .container {
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    flex: 1;
-    overflow-y: auto; /* enables vertical scroll */
-    overflow-x: hidden; /* optional: prevent horizontal scroll */
-    box-sizing: border-box;
-  }
-
-  /* Optional: make scrollbar look cleaner */
-  .container::-webkit-scrollbar {
-    width: 8px;
-  }
-  .container::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 6px;
-  }
-
-  .containerItem {
-    padding: 4px 1rem;
-    margin-top: 1rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-start;
-
-    &:hover {
-      background-color: gray;
-      cursor: pointer;
-    }
-  }
-
-  .sideBarImageDiv {
-    width: 45px;
-    height: 45px;
-    flex-shrink: 0; /* prevents shrinking */
-  }
-  .sideBarImageDiv img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-
-  .sideBarTextDiv {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .sideBarTextDiv .message {
-    font-size: 14px;
-
-    white-space: nowrap; /* Keeps message in a single line */
-    overflow: hidden; /* Hides text overflow */
-    text-overflow: ellipsis; /* Adds "..." when too long */
-  }
-  .message-seen {
-    color: #a9a9a9;
-  }
-`;
 const StyledSidebar = styled.div`
   display: flex;
   height: 100vh;
@@ -594,6 +538,10 @@ const StyledSidebar = styled.div`
 
   .chatItem:hover {
     background: #333;
+  }
+
+  .chatItem.activeConversation {
+    background: #333 !important;
   }
 
   .chatItem img {

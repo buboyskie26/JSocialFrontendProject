@@ -1,63 +1,60 @@
-// import React from "react";
-// import { useDispatch } from "react-redux";
-// import { logoutUser } from "../app/slices/authSlice";
-// import { useNavigate } from "react-router-dom";
-
-// export default function MessengerDashboardPage() {
-//   const dispatch = useDispatch();
-//   const navigate = useNavigate();
-//   return (
-//     <div className="w-full min-h-screen">
-//       <div className="w-full text-center">
-//         <span className="">MessengerDashboardPage</span>
-//       </div>
-
-//       <button
-//         onClick={async () => {
-//           const data = await dispatch(logoutUser()).unwrap();
-//           if (data) {
-//             navigate("/login");
-//           }
-//           console.log({ data });
-//         }}
-//       >
-//         Logout
-//       </button>
-//     </div>
-//   );
-// }
 import Sidebar from "../components/layout/Sidebar";
 import ChatWindow from "../components/layout/ChatWindow";
 import { useSelector } from "react-redux";
-import SkeletonMessagesv2 from "../components/layout/SkeletonMessagesv2";
+import { useEffect } from "react";
+import RightSidebar from "./RightSidebar";
 
 export default function MessengerDashboardPage() {
   //
   const selectedConversation = useSelector(
     (w) => w.conversation.selectedConversation
   );
+  const isRightSideBarOpen = useSelector((w) => w.shared.isRightSideBarOpen);
 
+  console.log({ isRightSideBarOpen });
+  useEffect(() => {
+    // console.log({ selectedConversation });
+  }, [selectedConversation]);
   //
+
   // if (loadingUserMessages) return <div>loadingUserMessages...</div>;
+  // const isRightSidebarOpen = true;
 
   return (
-    <div className="flex h-screen  text-white">
-      {/* Sidebar for conversations */}
-      <div className="w-1/4 border-r border-gray-700" style={{ width: "30%" }}>
-        <Sidebar />
-      </div>
+    <div className="w-full">
+      <div className="flex h-screen  text-white">
+        {/* Sidebar for conversations */}
+        <div
+          className="w-1/4 border-r border-gray-700"
+          // style={{ width: "30%" }}
+          style={{ width: isRightSideBarOpen ? "30%" : "40%" }}
+        >
+          <Sidebar conversationId={selectedConversation?.conversation_id} />
+        </div>
 
-      {/* Main chat window */}
-      <div className="flex-1 flex flex-col" style={{ width: "70%" }}>
-        <ChatWindow
-          conversationId={selectedConversation?.conversation_id}
-          conversationObject={selectedConversation}
-        />
+        {/* Main chat window */}
+        <div
+          className="flex-1 flex flex-col"
+          // style={{ width: "70%" }}
+          // style={{ width: "40%" }}
+          style={{ width: isRightSideBarOpen ? "40%" : "60%" }}
+        >
+          <ChatWindow conversationObject={selectedConversation} />
+        </div>
+
+        {/*  */}
+        {isRightSideBarOpen && (
+          <RightSidebar
+            isRightSidebarOpen={isRightSideBarOpen}
+            selectedConversation={selectedConversation}
+          />
+        )}
       </div>
     </div>
   );
   // return <div></div>;
 }
+
 //  <div className="flex h-screen  text-white">
 //       {/* Sidebar for conversations */}
 //       <div className="w-1/4 border-r border-gray-700" style={{ width: "30%" }}>
