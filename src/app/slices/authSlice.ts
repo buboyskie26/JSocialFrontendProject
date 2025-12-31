@@ -100,9 +100,7 @@ export const logoutUser = createAsyncThunk(
     try {
       // return await AuthService.login(credentials);
       const response = await axios.post("/auth/logoutUser");
-
       localStorage.removeItem("token");
-
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(err.message);

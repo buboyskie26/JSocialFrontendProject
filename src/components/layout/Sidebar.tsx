@@ -30,7 +30,7 @@ import {
   getUserRecentSearches,
 } from "../../app/slices/recentSearchesSlice";
 import SidebarSearchResult from "./SidebarSearchResult";
-import { getAllUsersBySearch } from "../../app/slices/authSlice";
+import { getAllUsersBySearch, logoutUser } from "../../app/slices/authSlice";
 // import janeDoeImage from "../../assets/jane_doe_sample.jpg";
 
 //
@@ -143,8 +143,20 @@ export default function Sidebar({ conversationId }: Props) {
     <StyledSidebar>
       {/* LEFT FIXED ICON COLUMN */}
       <div className="leftColumn">
-        <div className="icon profile" title="Profile">
-          <img src={johnDoeImage} />
+        <div
+          onClick={() => {
+            if (window.confirm("Are you sure you want to open the profile?")) {
+              // Logout
+
+              const data = dispatch(logoutUser()).unwrap();
+              console.log({ data });
+              //
+            }
+          }}
+          className="icon profile"
+          title="Profile"
+        >
+          <img src={johnDoeImage} alt="Profile" />
         </div>
 
         <div className="icon" />

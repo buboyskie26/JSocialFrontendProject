@@ -131,6 +131,8 @@ export default function ChatWindowMessages({
         onEditClick={() => {
           dispatch(setGetMessageData(item));
           dispatch(setTextMessageIsEditing(true));
+          //
+
           // console.log("click v2");
         }}
         onRemoveClick={async () => {
@@ -151,21 +153,15 @@ export default function ChatWindowMessages({
     //
     // Left side of Chat Messages.
 
-    // if (hoverMessageId === item?.id) console.log({ hoverMessageId });
-
     // const showMessageAction = hoverMessageId === item?.id && messageAction;
     //
-    const showMessageAction =
-      (clickedMessageAction !== item?.id &&
-        hoverMessageId === item?.id &&
-        messageAction) ||
-      (clickedMessageAction === item?.id && messageAction);
 
     //
     //
     function escapeRegExp(text) {
       return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
     }
+
     function highlightText(text: string, searchText: string) {
       // if (!searchText) return truncateText(text);
 
@@ -194,6 +190,17 @@ export default function ChatWindowMessages({
       );
     }
     //
+
+    const showMessageAction =
+      (clickedMessageAction !== item?.id &&
+        hoverMessageId === item?.id &&
+        messageAction) ||
+      (clickedMessageAction === item?.id && messageAction);
+
+    //
+    // if (hoverMessageId === item?.id) console.log({ hoverMessageId });
+    // console.log({ clickedMessageAction });
+
     //
     if (positionMessage === "left") {
       return (
@@ -258,8 +265,8 @@ export default function ChatWindowMessages({
                   <ReplyMessageTextDiv>{replyMessage}</ReplyMessageTextDiv>
                 </div>
                 <div className="flex w-full justify-end items-center-safe">
-                  {/* {showMessageAction} */}
-                  {messageAction}
+                  {/* {messageAction} */}
+                  {showMessageAction}
 
                   <MessageTextDiv
                     isSender={isSender}
@@ -276,8 +283,8 @@ export default function ChatWindowMessages({
             </>
           ) : (
             <>
-              {messageAction}
-              {/* {showMessageAction} */}
+              {/* {messageAction} */}
+              {showMessageAction}
 
               <MessageTextDiv
                 isSender={isSender}
@@ -352,6 +359,7 @@ export default function ChatWindowMessages({
                     {showMessagesFormat(
                       "right",
                       item,
+                      isLastOfGroup,
                       clickedMessageAction,
                       setClickedMessageAction
                     )}

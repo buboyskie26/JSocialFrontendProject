@@ -62,7 +62,10 @@ export default function MessageActionsMenu({
       </div>
     );
     const smileAction = (
-      <div onClick={onEditClick} className="ellipsisContainer">
+      <div
+        // onClick={onEditClick}
+        className="ellipsisContainer"
+      >
         <FaRegSmile className="emoji" />
       </div>
     );
@@ -96,6 +99,16 @@ export default function MessageActionsMenu({
 
       {showMenu && (
         <MenuContainer ref={menuRef}>
+          {isSender && (
+            <MenuItem
+              onClick={() => {
+                onEditClick();
+                setShowMenu(false);
+              }}
+            >
+              Update
+            </MenuItem>
+          )}
           <MenuItem
             onClick={() => {
               // dispatch(setShowMenu(false));
@@ -106,6 +119,7 @@ export default function MessageActionsMenu({
           >
             Remove
           </MenuItem>
+
           <MenuItem>Forward</MenuItem>
           <MenuItem>Pin</MenuItem>
           <MenuItem>Report</MenuItem>

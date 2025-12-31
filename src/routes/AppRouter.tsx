@@ -1,10 +1,5 @@
 import { useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import MessengerDashboardPage from "../pages/MessengerDashboardPage";
@@ -14,7 +9,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import NotFound from "../pages/NotFound";
 import ProfilePage from "../pages/ProfilePage";
-import ChatList from "../pages/ChatList";
+import GeneralLoading from "../components/GeneralLoading";
 
 export default function AppRouter() {
   //
@@ -28,18 +23,18 @@ export default function AppRouter() {
   //
 
   //
-  if (loading) return <div>Loading logo...</div>;
+  // if (loading) return <div>Loading logo...</div>;
+  if (loading) return <GeneralLoading />;
   //
   // if (loadingUserMessages) return <div>loadingUserMessages...</div>;
-
   //
-
   return (
     <Router>
       <Routes>
         {/* Public Routes */}
         <Route element={<PublicRoute />}>
-          <Route path="/" element={<ChatList />} />
+          {/* <Route path="/" element={<ChatList />} /> */}
+          <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
