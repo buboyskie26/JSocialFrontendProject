@@ -1,20 +1,93 @@
 import Sidebar from "../components/layout/Sidebar";
 import ChatWindow from "../components/layout/ChatWindow";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import RightSidebar from "./RightSidebar";
+import { replace, useNavigate, useParams } from "react-router-dom";
+import { setSelectedConversation } from "../app/slices/conversationSlice";
 
 export default function MessengerDashboardPage() {
+  //
+  const navigate = useNavigate();
+
+  const { conversationId } = useParams<{ conversationId: string }>();
+  const dispatch = useDispatch();
+  //
+  // console.log({ conversationId });
+  //
   //
   const selectedConversation = useSelector(
     (w) => w.conversation.selectedConversation
   );
   const isRightSideBarOpen = useSelector((w) => w.shared.isRightSideBarOpen);
 
-  console.log({ isRightSideBarOpen });
+  const user = useSelector((state) => state.auth.user);
+  const message_conversation_id = user?.message_conversation_id;
+
   useEffect(() => {
-    // console.log({ selectedConversation });
-  }, [selectedConversation]);
+    if (
+      !conversationId &&
+      !selectedConversation &&
+      user &&
+      user?.message_conversation_id
+    ) {
+      console.log("Messenger no params");
+
+      // dispatch(
+      //   setSelectedConversation({
+      //     // conversation_id: user?.message_conversation_id,
+      //     conversation_id: "44",
+      //     type: user?.message_message_type,
+      //     group_name: null,
+      //     last_message_id: 131,
+      //     last_message: user?.message_content,
+      //     last_message_time: user?.message_created_at,
+      //     chat_user_id: user?.id,
+      //     chat_username: user?.username,
+      //     chat_display_name: user?.display_Name,
+      //     chat_profile_image: null,
+      //   })
+      // );
+      navigate(`/messenger/${message_conversation_id}`, { replace: true });
+    }
+  }, [navigate, conversationId, user, dispatch]);
+
+  useEffect(() => {
+    if (selectedConversation?.conversation_id) {
+      //
+
+      //
+      const selectedConversationId = selectedConversation?.conversation_id;
+      navigate(`/messenger/${selectedConversationId}`, { replace: true });
+    }
+  }, [selectedConversation?.conversation_id, navigate]);
+
+  // # To populate the ChatWIndow with proper objects.
+  // Even after accessing the /messenger dasboard or with /message/conversationId
+  useEffect(() => {
+    //
+    if (conversationId && message_conversation_id && !selectedConversation) {
+      dispatch(
+        setSelectedConversation({
+          conversation_id: conversationId,
+          type: user?.message_message_type,
+          group_name: null,
+          last_message_id: 131,
+          last_message: user?.message_content,
+          last_message_time: user?.message_created_at,
+          chat_user_id: user?.id,
+          chat_username: user?.username,
+          chat_display_name: user?.display_Name,
+          chat_profile_image: null,
+        })
+      );
+    }
+  }, [conversationId, dispatch]);
+
+  //
+  // console.log({ isRightSideBarOpen });
+  console.log({ selectedConversation });
+  // console.log({ message_conversation_id });
   //
 
   // if (loadingUserMessages) return <div>loadingUserMessages...</div>;
@@ -27,7 +100,7 @@ export default function MessengerDashboardPage() {
         <div
           className="w-1/4 border-r border-gray-700"
           // style={{ width: "30%" }}
-          style={{ width: isRightSideBarOpen ? "30%" : "40%" }}
+          style={{ width: isRightSideBarOpen ? "28%" : "37%" }}
         >
           <Sidebar conversationId={selectedConversation?.conversation_id} />
         </div>

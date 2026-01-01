@@ -16,7 +16,8 @@ export default function AppRouter() {
   const dispatch = useDispatch();
   //
   const loading = useSelector((state) => state.auth.loading);
-  const user = useSelector((state) => state.auth.user);
+  // const user = useSelector((state) => state.auth.user);
+  // console.log({ user });
   useEffect(() => {
     dispatch(fetchCurrentUser());
   }, [dispatch]);
@@ -27,6 +28,7 @@ export default function AppRouter() {
   if (loading) return <GeneralLoading />;
   //
   // if (loadingUserMessages) return <div>loadingUserMessages...</div>;
+
   //
   return (
     <Router>
@@ -34,6 +36,7 @@ export default function AppRouter() {
         {/* Public Routes */}
         <Route element={<PublicRoute />}>
           {/* <Route path="/" element={<ChatList />} /> */}
+          {/* Should be my Landing Page */}
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -43,6 +46,10 @@ export default function AppRouter() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/messenger" element={<MessengerDashboardPage />} />
+          <Route
+            path="/messenger/:conversationId"
+            element={<MessengerDashboardPage />}
+          />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 

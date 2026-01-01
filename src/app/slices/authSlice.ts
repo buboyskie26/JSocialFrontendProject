@@ -33,7 +33,18 @@ export const fetchCurrentUser = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const response = await axios.get("/auth/userProfile");
-      console.log({ response });
+
+      const userObject = response?.data.user;
+      const recentChatUserObject = response?.data.recentChatUser;
+
+      // const twoObject = {
+      //   user: userObject,
+      //   recentChatUser: recentChatUserObject,
+      // };
+      // console.log({ twoObject });
+      // console.log({ response });
+      //
+      // return twoObject;
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
