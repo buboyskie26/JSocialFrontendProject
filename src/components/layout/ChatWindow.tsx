@@ -62,11 +62,11 @@ export default function ChatWindow({
   // console.log({ messages });
   //
 
-  useEffect(() => {
-    if (conversationId) {
-      dispatch(getIndividualMessages({ conversationId }));
-    }
-  }, [conversationId]);
+  // useEffect(() => {
+  //   if (conversationId) {
+  //     dispatch(getIndividualMessages({ conversationId }));
+  //   }
+  // }, [conversationId]);
 
   const [messagesx, setMessages] = useState<MessageType[]>([
     {
@@ -149,38 +149,7 @@ export default function ChatWindow({
 
   const loggedInUserId = user?.id;
   //
-  //
-  function showMessagesFormat(positionMessage, item) {
-    const messageAction = (
-      <MessageActionsMenu
-        isSender={item.sender_id === loggedInUserId}
-        onReplyClick={() => {
-          setIsUserReplying(true);
-        }}
-      />
-    );
-    const isSender = item.sender_id === loggedInUserId;
 
-    if (positionMessage === "left") {
-      // console.log({ isSender });
-      return (
-        <>
-          <MessageTextDiv style={{ marginRight: "5px" }} isSender={isSender}>
-            {item.content}
-          </MessageTextDiv>
-          {messageAction}
-        </>
-      );
-    } else if (positionMessage === "right") {
-      // console.log({ isSender });
-      return (
-        <>
-          {messageAction}
-          <MessageTextDiv isSender={isSender}>{item.content}</MessageTextDiv>
-        </>
-      );
-    }
-  }
   //
   return (
     <StyledDiv>

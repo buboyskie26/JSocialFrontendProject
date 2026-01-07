@@ -7,8 +7,8 @@ const SERVER_CLOUD = import.meta.env.VITE_API_URL;
 const BASE_URL = SERVER_CLOUD || SERVER_LOCAL;
 
 const api = axios.create({
-  baseURL: BASE_URL,
-  // baseURL: SERVER_LOCAL,
+  // baseURL: BASE_URL,
+  baseURL: SERVER_LOCAL,
   withCredentials: true, // ✅ allow cookies
   // timeout: 10000, // 10 second timeout
 });

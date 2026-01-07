@@ -12,6 +12,8 @@ export default function ChatWindowTop({ conversationObject }: Props) {
   const dispatch = useDispatch();
   const isRightSideBarOpen = useSelector((w) => w.shared.isRightSideBarOpen);
 
+
+  
   // console.log("ChatWindowTop");
   return (
     <div style={{ height: "10vh" }} className="topContentContainer p-4">
@@ -28,7 +30,7 @@ export default function ChatWindowTop({ conversationObject }: Props) {
       </div>
 
       <div
-        className="topRight"
+        className="topRight cursor-pointer" title="Conversation information"
         onClick={() => {
           dispatch(setIsRightSideBarOpen(!isRightSideBarOpen));
         }}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import MessageActionsMenu from "../shared/MessageActionsMenu";
 import styled from "styled-components";
@@ -6,14 +6,21 @@ import janeDoeImage from "../../assets/jane_doe_sample.png";
 
 import {
   deleteMessage,
+  getConversationMessages,
   getIndividualMessages,
+  loadInitialMessages,
+  loadMessagesAfter,
+  loadMessagesAround,
+  loadMessagesBefore,
   setGetMessageData,
+  setIsClickedMessageUponSearch,
   setIsUserReplying,
+  setMessagesLoading,
+  setScrollToMessageId,
   setTextMessageIsEditing,
 } from "../../app/slices/messagesSlice";
 
 interface Props {
-  // isUserReplying: any;
   loggedInUserId: string;
   conversationId: number;
 }
@@ -33,29 +40,68 @@ export default function ChatWindowMessages({
   const enteredRightSidebarText = useSelector(
     (w) => w.messages.enteredRightSidebarText
   );
-  // console.log({ enteredRightSidebarText });
 
-  const messages = useSelector((w) => w.messages.individualMessages);
+  // Pouplate the previous messages
+  const messagesPrev = useSelector((w) => w.messages.individualMessages);
+
+  // Populates the messages array of getConversationMessages function.
+  const messagesDataArray = useSelector((w) => w.messages.messagesDataArray);
+  useEffect(() => {
+    console.log({ messagesDataArray });
+  }, [messagesDataArray]);
+  const messagesLoading = useSelector((w) => w.messages.messagesLoading);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   // const messageRefs = useRef({});
 
+  // const [isClickedMessageUponSearch, setIsClickedMessageUponSearch] =
+  //   useState(false);
+
+  const isClickedMessageUponSearch = useSelector(
+    (w) => w.messages.isClickedMessageUponSearch
+  );
+  // useEffect(() => {
+  //   console.log({ isClickedMessageUponSearch });
+  // }, [isClickedMessageUponSearch]);
+  // Value of clicked message from search data list (Right div search).
   const scrollToMessageId = useSelector((w) => w.messages.scrollToMessageId);
 
-  // const scrollToMessageId = 32;
+  // Loads the Conversation Messages
+  // useEffect(() => {
+  //   if (conversationId) {
+  //     dispatch(getIndividualMessages({ conversationId }));
+  //   }
+  // }, [dispatch, conversationId]);
 
+  //// ##
   // Scroll to bottom when messages change
   useEffect(() => {
-    if (!scrollToMessageId) {
-      bottomRef.current?.scrollIntoView({ behavior: "auto" });
+    // console.log({ scrollToMessageId });
+    // if (scrollToMessageId === null) {
+
+    const messageCurrent = messageRefs.current;
+    // console.log({ messageCurrent });
+    //
+
+    // Applicable only if the scrollToMessageId is not null (Has clicked upon searched.)
+    // if (scrollToMessageId === null && !messageCurrent) {
+
+    if (!isClickedMessageUponSearch) {
+      // This is working at the scroll top only.
+      // if (scrollToMessageId === null && !isClickedMessageUponSearch) {
+      console.log("DEFAULT SCROLL BOTTOM");
+      bottomRef?.current?.scrollIntoView({ behavior: "auto" });
     }
-  }, [messages, scrollToMessageId]);
+  }, [messagesDataArray, scrollToMessageId, isClickedMessageUponSearch]);
 
   //
   // Small delay to ensure DOM is ready
   useEffect(() => {
     // console.log({ messageRefs });
     // Add a small delay to ensure refs are populated after render
+    // if (!scrollToMessageId) return;
+
     const timer = setTimeout(() => {
       if (scrollToMessageId && messageRefs.current[scrollToMessageId]) {
         //
@@ -63,12 +109,19 @@ export default function ChatWindowMessages({
         // console.log({ messageElement });
 
         if (messageElement) {
+          // console.log("SCROLLED TO CLICKED MESSAGE");
           messageElement.scrollIntoView({
             behavior: "smooth",
             block: "center",
           });
 
           messageElement.classList.add("highlight-message");
+          //
+          // reset
+          // messageRefs.current = {};
+          // To prevent moving again to the clicked message.
+          dispatch(setScrollToMessageId(null));
+          // dispatch(setIsClickedMessageUponSearch(false));
 
           setTimeout(() => {
             messageElement?.classList.remove("highlight-message");
@@ -78,7 +131,364 @@ export default function ChatWindowMessages({
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [scrollToMessageId, messages]); // Added messages to trigger when messages load
+  }, [dispatch, scrollToMessageId, messagesDataArray]); // Added messages to trigger when messages load
+
+  const topRef = useRef<HTMLDivElement>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
+
+  const hasMoreBefore = useSelector((w) => w.messages.hasMoreBefore);
+  const hasMoreAfter = useSelector((w) => w.messages.hasMoreAfter);
+
+  /**
+   * Load more messages when scrolling up
+   */
+  const handleLoadMoreBefore = useCallback(async () => {
+    if (messagesLoading || !hasMoreBefore || messagesDataArray.length === 0) {
+      return;
+    }
+
+    const firstMessageId = messagesDataArray[0].id;
+    const container = messageContainerRef.current;
+
+    if (!container) return;
+
+    // Save scroll position before loading
+    const scrollHeightBefore = container.scrollHeight;
+    const scrollTopBefore = container.scrollTop;
+
+    try {
+      await dispatch(
+        loadMessagesBefore({
+          conversationId,
+          beforeMessageId: firstMessageId,
+          limit: 2,
+        })
+      ).unwrap();
+
+      // Restore scroll position after messages are loaded
+      requestAnimationFrame(() => {
+        if (container) {
+          const scrollHeightAfter = container.scrollHeight;
+          container.scrollTop =
+            scrollTopBefore + (scrollHeightAfter - scrollHeightBefore);
+        }
+      });
+    } catch (error) {
+      console.error("Failed to load older messages:", error);
+    }
+  }, [
+    messagesLoading,
+    hasMoreBefore,
+    messagesDataArray,
+    conversationId,
+    dispatch,
+  ]);
+
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null); // NEW: Trigger for loading more at bottom
+
+  // Todo. How can I scroll to bottom which will trigger this
+  // after API triggered, it should have spaces for scrolling to bottom.
+  const handleLoadMoreAfterv2 = useCallback(async () => {
+    //
+    if (messagesLoading || !hasMoreAfter || messagesDataArray.length === 0) {
+      return;
+    }
+
+    const lastMessageId = messagesDataArray[messagesDataArray.length - 1].id;
+    const container = messageContainerRef.current;
+    if (!container) return;
+
+    // Save scroll position before loading
+    const scrollHeightBefore = container.scrollHeight;
+    const scrollTopBefore = container.scrollTop;
+    // Calculate distance from bottom
+    const distanceFromBottom =
+      scrollHeightBefore - scrollTopBefore - container.clientHeight;
+
+    try {
+      const fetchMessagesAfter = await dispatch(
+        loadMessagesAfter({
+          conversationId,
+          afterMessageId: lastMessageId,
+        })
+      ).unwrap();
+
+      // console.log({ fetchMessagesAfter });
+
+      // Restore scroll position after messages are loaded
+      requestAnimationFrame(() => {
+        if (container) {
+          const scrollHeightAfter = container.scrollHeight;
+          // Keep the same distance from bottom
+          container.scrollTop =
+            scrollHeightAfter - container.clientHeight - distanceFromBottom;
+        }
+      });
+    } catch (error) {
+      console.error("Failed to load newer messages:", error);
+    }
+  }, [
+    messagesLoading,
+    hasMoreAfter,
+    messagesDataArray,
+    conversationId,
+    dispatch,
+  ]);
+
+  //
+
+  const handleLoadMoreAfter = useCallback(async () => {
+    if (messagesLoading || !hasMoreAfter || messagesDataArray.length === 0) {
+      return;
+    }
+
+    const lastMessageId = messagesDataArray[messagesDataArray.length - 1].id;
+    const container = messageContainerRef.current;
+    if (!container) return;
+
+    // Save scroll position before loading
+    const scrollHeightBefore = container.scrollHeight;
+    const scrollTopBefore = container.scrollTop;
+    // Calculate distance from bottom
+    const distanceFromBottom =
+      scrollHeightBefore - scrollTopBefore - container.clientHeight;
+
+    try {
+      const fetchMessagesAfter = await dispatch(
+        loadMessagesAfter({
+          conversationId,
+          afterMessageId: lastMessageId,
+        })
+      ).unwrap();
+      // console.log({ fetchMessagesAfter });
+
+      // Restore scroll position after messages are loaded
+      requestAnimationFrame(() => {
+        if (container) {
+          const scrollHeightAfter = container.scrollHeight;
+          // Keep the same distance from bottom
+          // container.scrollTop =
+          //   scrollHeightAfter - container.clientHeight - distanceFromBottom;
+        }
+      });
+    } catch (error) {
+      console.error("Failed to load newer messages:", error);
+    }
+  }, [
+    messagesLoading,
+    hasMoreAfter,
+    messagesDataArray,
+    conversationId,
+    dispatch,
+  ]);
+  //
+  // IntersectionObserver effect
+  useEffect(() => {
+    const topElement = topRef.current;
+    const bottomElement = bottomRef.current;
+    const loadMoreTrigger = loadMoreTriggerRef.current; // NEW
+    const container = messageContainerRef.current;
+
+    // console.log({ loadMoreTrigger });
+    // console.log({ bottomElement });
+    if (!topElement || !loadMoreTrigger || !container) return;
+
+    const observerOptions = {
+      root: container,
+      rootMargin: "0px",
+      threshold: 0.1,
+    };
+    const timeoutRefs = new Map<Element, NodeJS.Timeout>(); // Store timeouts
+    // console.log({ timeoutRefs });
+    //
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      //
+      entries.forEach((entry) => {
+        if (entry.target === topElement) {
+          // if (entry.isIntersecting) {
+          console.log("User scrolled to TOP");
+          //
+          const existingTimeout = timeoutRefs.get(entry.target);
+          //
+          if (existingTimeout) {
+            clearTimeout(existingTimeout);
+          }
+          //
+          if (entry.isIntersecting && hasMoreBefore) {
+            console.log("User scrolled to TOP - Loading more messages");
+            const timeoutId = setTimeout(() => {
+              handleLoadMoreBefore();
+              timeoutRefs.delete(entry.target); // Clean up after execution
+            }, 500);
+
+            timeoutRefs.set(entry.target, timeoutId);
+          }
+          // }
+        }
+        if (entry.target === loadMoreTrigger) {
+          // Clear existing timeout for this element
+          const existingTimeout = timeoutRefs.get(entry.target);
+          if (existingTimeout) {
+            clearTimeout(existingTimeout);
+          }
+
+          if (entry.isIntersecting && hasMoreAfter) {
+            console.log("User scrolled to BOTTOM - Loading more messages");
+
+            const timeoutId = setTimeout(() => {
+              handleLoadMoreAfter();
+              timeoutRefs.delete(entry.target); // Clean up after execution
+            }, 500);
+
+            timeoutRefs.set(entry.target, timeoutId);
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      observerCallback,
+      observerOptions
+    );
+
+    observer.observe(topElement);
+    observer.observe(loadMoreTrigger); // NEW: Observe the trigger
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    messagesDataArray,
+    handleLoadMoreBefore,
+    handleLoadMoreAfter,
+    //
+    isClickedMessageUponSearch,
+
+    hasMoreAfter,
+    hasMoreBefore,
+  ]);
+
+  // Initial loads
+  useEffect(() => {
+    if (conversationId && scrollToMessageId) {
+      // console.log({ scrollToMessageId });
+
+      const fetchLoadMessages = async () => {
+        try {
+          const loadMessagesData = await dispatch(
+            loadMessagesAround({
+              conversationId,
+              messageId: scrollToMessageId,
+            })
+          ).unwrap();
+
+          // You can use loadMessagesData here if needed
+          console.log({ loadMessagesData });
+        } catch (error) {
+          console.error(error);
+        }
+      };
+
+      fetchLoadMessages();
+    }
+  }, [conversationId, scrollToMessageId, dispatch]);
+
+  /**
+   * Load more messages when scrolling up
+   */
+  const handleLoadMessagesAround = useCallback(async () => {
+    if (
+      messagesLoading ||
+      // || !hasMoreAfter
+      messagesDataArray.length === 0
+    ) {
+      return;
+    }
+
+    const lastMessageId = messagesDataArray[messagesDataArray.length - 1].id;
+    const container = messageContainerRef.current;
+    if (!container) return;
+
+    // Save scroll position before loading
+    const scrollHeightBefore = container.scrollHeight;
+    const scrollTopBefore = container.scrollTop;
+    // Calculate distance from bottom
+    const distanceFromBottom =
+      scrollHeightBefore - scrollTopBefore - container.clientHeight;
+
+    try {
+      await dispatch(
+        loadMessagesAround({
+          conversationId,
+          // messageId: lastMessageId,
+          messageId: scrollToMessageId,
+        })
+      ).unwrap();
+
+      // await dispatch(
+      //   loadMessagesAround({
+      //     conversationId,
+      //     messageId: scrollToMessageId,
+      //   })
+      // ).unwrap();
+
+      // Restore scroll position after messages are loaded
+      requestAnimationFrame(() => {
+        if (container) {
+          const scrollHeightAfter = container.scrollHeight;
+          // Keep the same distance from bottom
+          container.scrollTop =
+            scrollHeightAfter - container.clientHeight - distanceFromBottom;
+        }
+      });
+    } catch (error) {
+      console.error("Failed to load newer messages:", error);
+    }
+  }, [
+    messagesLoading,
+    // hasMoreBefore,
+    messagesDataArray,
+    conversationId,
+    scrollToMessageId,
+    dispatch,
+  ]);
+
+  //
+
+  // const loadInitialMessages = useCallback(async () => {
+  //   try {
+  //     setMessagesLoading(true);
+  //     const response = await dispatch(
+  //       getConversationMessages({
+  //         params: { limit: 10 },
+  //         conversationId: conversationId,
+  //       })
+  //     ).unwrap();
+  //     console.log({ response });
+
+  //     console.log("📱 Loaded initial messages:", response?.pagination?.count);
+  //   } catch (error) {
+  //     console.error("Error loading initial messages:", error);
+  //   } finally {
+  //     setMessagesLoading(false);
+  //   }
+  //   //
+  // }, [dispatch, conversationId]);
+
+  /**
+   * Load initial messages when conversation changes
+   */
+  useEffect(() => {
+    if (conversationId) {
+      dispatch(
+        loadInitialMessages({
+          conversationId: conversationId as number,
+        })
+      );
+    }
+  }, [dispatch, conversationId]);
+
+  ///
 
   //
   async function removeSingleMessage(messageId: number) {
@@ -116,9 +526,11 @@ export default function ChatWindowMessages({
   ) {
     //
     // const [showMenu, setShowMenu] = useState(false);
-
     // console.log({ clickedMessageAction });
     //
+
+    if (item?.deleted === true) return;
+
     //
     const messageAction = (
       <MessageActionsMenu
@@ -148,14 +560,7 @@ export default function ChatWindowMessages({
     );
     const isSender = item.sender_id === loggedInUserId;
 
-    const hasReplyMessage = item.reply_to_message_id !== null;
     const replyMessage = item.reply_message_content;
-    //
-    // Left side of Chat Messages.
-
-    // const showMessageAction = hoverMessageId === item?.id && messageAction;
-    //
-
     //
     //
     function escapeRegExp(text) {
@@ -302,7 +707,6 @@ export default function ChatWindowMessages({
       );
     }
   }
-
   //
   //
   return (
@@ -310,10 +714,19 @@ export default function ChatWindowMessages({
       isSender={true}
       hasReplyDiv={getMessageData !== null}
     >
-      <div className="messageContainer">
-        {messages.length > 0 &&
-          messages.map((item, index) => {
-            const nextMessage = messages[index + 1];
+      <div className="messageContainer" ref={messageContainerRef}>
+        {/* Top sentinel div */}
+        <div
+          className="flex justify-center items-center"
+          ref={topRef}
+          style={{ height: "1px" }}
+        >
+          {hasMoreBefore && <span>Loading messages...</span>}
+        </div>
+        {/* <div ref={topRef} style={{ height: "1px", background: "red" }} /> */}
+        {messagesDataArray.length > 0 &&
+          messagesDataArray.map((item, index) => {
+            const nextMessage = messagesDataArray[index + 1];
             // Is from other user?
             const isOther = item.sender_id !== loggedInUserId;
             // Is last message of their cluster?
@@ -369,6 +782,32 @@ export default function ChatWindowMessages({
             );
           })}
         <div ref={bottomRef} />
+
+        {/* NEW: Load more trigger - placed AFTER bottomRef */}
+        {/* {hasMoreAfter && ( */}
+        <div
+          ref={loadMoreTriggerRef}
+          style={{
+            height: "100px", // Space to scroll into
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#999",
+            padding: "0",
+            margin: "0",
+          }}
+        >
+          {hasMoreAfter && (
+            <>
+              <span>
+                {messagesLoading
+                  ? "Loading more messages..."
+                  : "Scroll for more"}
+              </span>
+            </>
+          )}
+        </div>
+        {/* )} */}
       </div>
     </MessengerContentStyled>
   );

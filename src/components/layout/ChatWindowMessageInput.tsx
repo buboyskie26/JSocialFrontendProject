@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import {
   addMessage,
+  getConversationMessages,
   getIndividualMessages,
   getUserMessages,
   sendMessageToUser,
@@ -48,9 +49,8 @@ Props) {
   const selectedConversation = useSelector(
     (w) => w.conversation.selectedConversation
   );
-  useEffect(() => {
-    console.log({ selectedConversation });
-  }, [selectedConversation]);
+  //
+  // console.log({ selectedConversation });
   //
   useEffect(() => {
     // Auto focus textarea
@@ -100,7 +100,7 @@ Props) {
 
     const trimmedMsg = textMessageInput.trim();
 
-    console.log("Message sent:", textMessageInput);
+    // console.log("Message sent:", textMessageInput);
     // console.log({ conversationObject });
     // return;
     try {
@@ -135,12 +135,19 @@ Props) {
             );
           }
           // Refresh datas.
-          if (conversationId)
+          if (conversationId) {
+            // dispatch(
+            //   getIndividualMessages({
+            //     conversationId,
+            //   })
+            // );
             dispatch(
-              getIndividualMessages({
+              getConversationMessages({
                 conversationId,
               })
             );
+          }
+
           // This will refresh the User Chat Messages (Left)
           // if this hits, the loadingUserMessages should be false.
           dispatch(getUserMessages({ skipLoading: true }));
@@ -150,9 +157,9 @@ Props) {
           dispatch(setTextMessageInput(""));
           //
         }
-        console.log({ data });
+        // console.log({ data });
       } else if (textMessageIsEditing && message_id) {
-        console.log("hit editing");
+        // console.log("hit editing");
         //
         const data = await dispatch(
           // addConversation({

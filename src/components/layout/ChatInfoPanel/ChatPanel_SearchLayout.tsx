@@ -4,6 +4,7 @@ import styled from "styled-components";
 import {
   getSearchUserMessages,
   setEnteredRightSidebarText,
+  setIsClickedMessageUponSearch,
   setScrollToMessageId,
 } from "../../../app/slices/messagesSlice";
 
@@ -112,23 +113,25 @@ export default function SearchLayout({
     //
     if (e.key === "Enter" && messageText) {
       setIsEntered(true);
-      console.log("enter");
+      // console.log("enter");
       console.log({ messageText });
 
       const fetchUserMessages = async () => {
+        //
+        const payload: { conversationId: string; messageText: string } = {
+          conversationId: conversationId as string,
+          messageText: messageText as string,
+        };
+        //
         try {
-          const data = await dispatch(
-            getSearchUserMessages({
-              conversationId: conversationId,
-              messageText: messageText,
-            })
-          ).unwrap();
+          const data = await dispatch(getSearchUserMessages(payload)).unwrap();
           console.log({ data });
           if (data && data.length > 0) {
           }
         } catch (error) {
           console.log(error);
         }
+        //
       };
 
       fetchUserMessages();
@@ -199,6 +202,7 @@ export default function SearchLayout({
                   key={index}
                   onClick={() => {
                     dispatch(setScrollToMessageId(item?.id));
+                    dispatch(setIsClickedMessageUponSearch(true));
                   }}
                 >
                   <img

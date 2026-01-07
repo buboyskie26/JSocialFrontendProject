@@ -61,12 +61,18 @@ export default function MessengerDashboardPage() {
       navigate(`/messenger/${selectedConversationId}`, { replace: true });
     }
   }, [selectedConversation?.conversation_id, navigate]);
+  console.log({ user });
 
   // # To populate the ChatWIndow with proper objects.
   // Even after accessing the /messenger dasboard or with /message/conversationId
   useEffect(() => {
     //
-    if (conversationId && message_conversation_id && !selectedConversation) {
+    if (
+      conversationId &&
+      user &&
+      message_conversation_id &&
+      !selectedConversation
+    ) {
       dispatch(
         setSelectedConversation({
           conversation_id: conversationId,
@@ -75,14 +81,16 @@ export default function MessengerDashboardPage() {
           last_message_id: 131,
           last_message: user?.message_content,
           last_message_time: user?.message_created_at,
-          chat_user_id: user?.id,
-          chat_username: user?.username,
-          chat_display_name: user?.display_Name,
+
+          chat_user_id: user?.other_user_id,
+          chat_username: user?.other_user_username,
+          chat_display_name: user?.other_user_display_name,
+
           chat_profile_image: null,
         })
       );
     }
-  }, [conversationId, dispatch]);
+  }, [conversationId, dispatch, user]);
 
   //
   // console.log({ isRightSideBarOpen });
