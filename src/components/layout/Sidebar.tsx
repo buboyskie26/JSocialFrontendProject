@@ -201,7 +201,6 @@ export default function Sidebar({ conversationId }: Props) {
           <>
             <div
               className="container"
-              style={{ border: "1px solid #eee" }}
               {...(searchInputFocused
                 ? {
                     ref: focusContainerRef,
@@ -456,7 +455,6 @@ const StyledSidebar = styled.div`
     gap: 1rem;
     margin-top: 1rem;
     width: 100%;
-    border: 1px solid #eee;
     cursor: pointer;
     border-radius: 8px;
   }

@@ -12,6 +12,8 @@ interface AuthState {
   getAllUserArray: any | null;
 
   showRecentSearch: boolean;
+
+  loadingSubmit: boolean;
 }
 
 const initialState: AuthState = {
@@ -25,6 +27,8 @@ const initialState: AuthState = {
 
   // Handles the timing of reflecting the your contacts
   showRecentSearch: false,
+
+  loadingSubmit: false,
 };
 
 // ✅ Checks current session via cookie
@@ -54,6 +58,7 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 //
+
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (credentials: { email: string; password: string }, thunkAPI) => {
@@ -71,6 +76,33 @@ export const loginUser = createAsyncThunk(
     }
   }
 );
+
+export const registerUser = createAsyncThunk(
+  "auth/registerUser",
+  async (
+    credentials: {
+      username: string;
+      email: string;
+      password: string;
+      display_name: string;
+    },
+    thunkAPI
+  ) => {
+    try {
+      // return await AuthService.login(credentials);
+      // console.log({ credentials });
+      const response = await axios.post("/auth/registerUser", credentials);
+      if (response?.data?.token)
+        localStorage.setItem("token", response.data.token);
+
+      console.log({ response });
+      return response.data; // { token, user }
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.message);
+    }
+  }
+);
+//
 
 export const getAllUsers = createAsyncThunk(
   "auth/getAllUsers",
@@ -131,6 +163,9 @@ const authSlice = createSlice({
     setShowRecentSearch: (state, action) => {
       state.showRecentSearch = action.payload;
     },
+    setError: (state, action) => {
+      state.error = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -158,8 +193,36 @@ const authSlice = createSlice({
       })
       //
       .addCase(loginUser.fulfilled, (state, action) => {
-        state.user = action.payload.user;
+        const payload = action.payload;
+
+        if (payload?.user) {
+          state.user = payload.user;
+          state.loadingSubmit = false;
+        }
+      })
+      .addCase(loginUser.pending, (state, action) => {
+        state.loadingSubmit = true;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loadingSubmit = true;
+      })
+      //
+      .addCase(registerUser.fulfilled, (state, action) => {
+        //
+        const payload = action.payload;
+
+        if (payload?.user) {
+          state.user = payload.user;
+          state.loadingSubmit = false;
+        }
+      })
+      .addCase(registerUser.pending, (state, action) => {
+        state.loadingSubmit = true;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.loadingSubmit = true;
       });
+
     // .addCase(logoutUser.fulfilled, (state, _) => {
     //   state.user = null;
     //   state.error = "";
@@ -169,5 +232,5 @@ const authSlice = createSlice({
   //   extraReducers: (builder) => {},
 });
 
-export const { logout, setShowRecentSearch } = authSlice.actions;
+export const { logout, setShowRecentSearch, setError } = authSlice.actions;
 export default authSlice.reducer;

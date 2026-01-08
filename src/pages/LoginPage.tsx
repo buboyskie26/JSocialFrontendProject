@@ -15,9 +15,9 @@ export default function LoginPage() {
   const from = location.state?.from?.pathname || "/messenger";
 
   const user = useSelector((state: any) => state.auth.user);
-  const loading = useSelector((state: any) => state.auth.loading);
+  const loading = useSelector((state: any) => state.auth.loadingSubmit);
 
-  console.log({ from });
+  // console.log({ from });
   //
   useEffect(() => {
     if (user) {
@@ -80,7 +80,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 block w-full border border-gray-00 rounded-lg px-3 py-2 text-gray-00 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
             />
           </div>
@@ -100,7 +100,12 @@ export default function LoginPage() {
 
         <p className="text-sm text-center text-gray-500 mt-4">
           Don’t have an account?{" "}
-          <a href="/register" className="text-blue-600 hover:underline">
+          <a
+            onClick={() => {
+              navigate("/register");
+            }}
+            className="text-blue-600 hover:underline cursor-pointer"
+          >
             Register
           </a>
         </p>
