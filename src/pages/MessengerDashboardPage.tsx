@@ -5,10 +5,14 @@ import { useEffect } from "react";
 import RightSidebar from "./RightSidebar";
 import { replace, useNavigate, useParams } from "react-router-dom";
 import { setSelectedConversation } from "../app/slices/conversationSlice";
+import { useSocket } from "../hooks/useSocket";
 
 export default function MessengerDashboardPage() {
   //
   const navigate = useNavigate();
+  const socket = useSocket();
+
+  // console.log({ socket });
 
   const { conversationId } = useParams<{ conversationId: string }>();
   const dispatch = useDispatch();
@@ -23,6 +27,8 @@ export default function MessengerDashboardPage() {
 
   const user = useSelector((state) => state.auth.user);
   const message_conversation_id = user?.message_conversation_id;
+  //
+  //
 
   useEffect(() => {
     if (

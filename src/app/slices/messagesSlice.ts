@@ -147,15 +147,15 @@ export const loadInitialMessages = createAsyncThunk<
     try {
       const response = await axios.get(
         `/conversations/${conversationId}/messages`,
-        { params: { limit } }
+        { params: { limit } },
       );
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.message || "Error loading messages."
+        err.response?.data?.message || "Error loading messages.",
       );
     }
-  }
+  },
 );
 
 /**
@@ -171,15 +171,15 @@ export const loadMessagesBefore = createAsyncThunk<
     try {
       const response = await axios.get(
         `/conversations/${conversationId}/messages`,
-        { params: { before: beforeMessageId, limit } }
+        { params: { before: beforeMessageId, limit } },
       );
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.message || "Error loading older messages."
+        err.response?.data?.message || "Error loading older messages.",
       );
     }
-  }
+  },
 );
 
 /**
@@ -195,15 +195,15 @@ export const loadMessagesAfter = createAsyncThunk<
     try {
       const response = await axios.get(
         `/conversations/${conversationId}/messages`,
-        { params: { after: afterMessageId, limit } }
+        { params: { after: afterMessageId, limit } },
       );
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.message || "Error loading newer messages."
+        err.response?.data?.message || "Error loading newer messages.",
       );
     }
-  }
+  },
 );
 
 /**
@@ -224,15 +224,15 @@ export const loadMessagesAround = createAsyncThunk<
     try {
       const response = await axios.get(
         `/conversations/${conversationId}/messages/${messageId}/around`,
-        { params: { before, after } }
+        { params: { before, after } },
       );
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.message || "Error loading messages around target."
+        err.response?.data?.message || "Error loading messages around target.",
       );
     }
-  }
+  },
 );
 
 /**
@@ -248,15 +248,15 @@ export const searchMessages = createAsyncThunk<
     try {
       const response = await axios.get(
         `/conversations/${conversationId}/search`,
-        { params: { q: query, limit } }
+        { params: { q: query, limit } },
       );
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.message || "Error searching messages."
+        err.response?.data?.message || "Error searching messages.",
       );
     }
-  }
+  },
 );
 
 export const getConversationMessages = createAsyncThunk(
@@ -265,16 +265,16 @@ export const getConversationMessages = createAsyncThunk(
     try {
       const response = await axios.get(
         `/conversations/${data?.conversationId}/messages`,
-        { params: data?.params }
+        { params: data?.params },
       );
       // console.log({ response });
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Error occured."
+        err.response?.data?.error || "Error occured.",
       );
     }
-  }
+  },
 );
 
 export const getIndividualMessages = createAsyncThunk(
@@ -282,16 +282,16 @@ export const getIndividualMessages = createAsyncThunk(
   async (data: any, thunkAPI: any) => {
     try {
       const response = await axios.get(
-        `/conversations/getMessagesByConversationId/${data?.conversationId}`
+        `/conversations/getMessagesByConversationId/${data?.conversationId}`,
       );
       // console.log({ response });
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Error occured."
+        err.response?.data?.error || "Error occured.",
       );
     }
-  }
+  },
 );
 
 export const getUserMessages = createAsyncThunk(
@@ -303,10 +303,10 @@ export const getUserMessages = createAsyncThunk(
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Error occured."
+        err.response?.data?.error || "Error occured.",
       );
     }
-  }
+  },
 );
 
 export const addMessage = createAsyncThunk(
@@ -318,10 +318,10 @@ export const addMessage = createAsyncThunk(
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Error occured."
+        err.response?.data?.error || "Error occured.",
       );
     }
-  }
+  },
 );
 
 export const sendMessageToUser = createAsyncThunk(
@@ -333,10 +333,10 @@ export const sendMessageToUser = createAsyncThunk(
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Error occured."
+        err.response?.data?.error || "Error occured.",
       );
     }
-  }
+  },
 );
 
 export const updateMessage = createAsyncThunk(
@@ -348,10 +348,10 @@ export const updateMessage = createAsyncThunk(
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Error occured."
+        err.response?.data?.error || "Error occured.",
       );
     }
-  }
+  },
 );
 
 export const deleteMessage = createAsyncThunk(
@@ -360,16 +360,16 @@ export const deleteMessage = createAsyncThunk(
     try {
       const response = await axios.delete(
         `/messages/deleteMessage/${data.messageId}`,
-        data
+        data,
       );
       console.log({ response });
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Error occured."
+        err.response?.data?.error || "Error occured.",
       );
     }
-  }
+  },
 );
 
 // export const getSearchUserMessages = createAsyncThunk(
@@ -404,11 +404,11 @@ export const getSearchUserMessages = createAsyncThunk(
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
-        err.response?.data?.error || "Error occured."
+        err.response?.data?.error || "Error occured.",
       );
       m;
     }
-  }
+  },
 );
 
 //
@@ -450,6 +450,51 @@ const messagesSlice = createSlice({
     setIsClickedMessageUponSearch: (state, action) => {
       state.isClickedMessageUponSearch = action.payload;
     },
+    addMessagesDataArray: (state, action) => {
+      state.messagesDataArray.push(action.payload);
+    },
+    updateMessagesDataArray: (state, action) => {
+      //
+      const messageDataObject = action.payload;
+      const messageId = messageDataObject?.id;
+
+      state.messagesDataArray = state.messagesDataArray.map((w) => {
+        if (w.id === messageId) {
+          return {
+            ...w,
+            content: messageDataObject?.content,
+            updated_at: messageDataObject?.updated_at,
+          };
+        }
+
+        return w;
+      });
+      //
+    },
+
+    deletedMessagesDataArray: (state, action) => {
+      //
+      const payload = action.payload;
+      console.log({ payload });
+      if (payload) {
+        // const messageDataObject = action.payload.data;
+        const messageDataObject = payload;
+        console.log({ messageDataObject });
+        const messageId = messageDataObject?.id;
+
+        state.messagesDataArray = state.messagesDataArray.map((w) => {
+          if (w.id === messageId) {
+            return {
+              ...w,
+              updated_at: messageDataObject?.updated_at,
+              deleted: messageDataObject?.deleted,
+            };
+          }
+          return w;
+        });
+        //
+      }
+    },
   },
   extraReducers: (builder) => {
     // ============================================
@@ -466,10 +511,10 @@ const messagesSlice = createSlice({
       state.hasMoreAfter = false; // No newer messages than most recent
       state.loadMode = "conversation";
       state.targetMessageId = null;
-      console.log(
-        "📱 Loaded initial messages:",
-        action.payload.pagination.count
-      );
+      // console.log(
+      //   "📱 Loaded initial messages:",
+      //   action.payload.pagination.count,
+      // );
     });
     builder.addCase(loadInitialMessages.rejected, (state, action) => {
       state.messagesLoading = false;
@@ -655,7 +700,6 @@ const messagesSlice = createSlice({
         state.loadingMessage = false;
 
         // Pushed this object to the messages list.
-
         // state.individualMessages.push(messageDataObject);
         // state.messageData = messageDataObject;
 
@@ -726,6 +770,9 @@ export const {
   setIsSearchClicked,
   setMessagesLoading,
   setIsClickedMessageUponSearch,
+  addMessagesDataArray,
+  updateMessagesDataArray,
+  deletedMessagesDataArray,
 } = messagesSlice.actions;
 
 export default messagesSlice.reducer;

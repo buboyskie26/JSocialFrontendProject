@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const SERVER_LOCAL = "http://localhost:3000/api";
+export const SERVER_LOCAL = "http://localhost:3000/api";
 const SERVER_CLOUD = import.meta.env.VITE_API_URL;
 
 // ✅ Fallback to local if env variable is not set (for development)
@@ -24,7 +24,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // ✅ Handle 401 errors (expired token)
@@ -38,7 +38,7 @@ api.interceptors.response.use(
       // window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

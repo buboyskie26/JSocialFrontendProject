@@ -23,6 +23,8 @@ import {
   updateMessage,
 } from "../../app/slices/messagesSlice";
 import { setSelectedConversation } from "../../app/slices/conversationSlice";
+import { getSocket } from "../../app/socket/socket";
+import { useTypingIndicator } from "../../hooks/useTypingIndicator";
 
 interface Props {
   conversationObject: any;
@@ -36,18 +38,19 @@ Props) {
   const dispatch = useDispatch();
   //
   const conversationId = conversationObject.conversation_id as number;
+  const receiverId = parseInt(conversationObject?.chat_user_id) as number;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textMessageInput = useSelector((w) => w.messages.textMessageInput);
   const getMessageData = useSelector((w) => w.messages.getMessageData);
   const textMessageIsEditing = useSelector(
-    (w) => w.messages.textMessageIsEditing
+    (w) => w.messages.textMessageIsEditing,
   );
   const messageContent = getMessageData?.content || "";
   const message_id = getMessageData?.id || null;
 
   //
   const selectedConversation = useSelector(
-    (w) => w.conversation.selectedConversation
+    (w) => w.conversation.selectedConversation,
   );
   //
   // console.log({ selectedConversation });
@@ -61,7 +64,7 @@ Props) {
     if (textMessageIsEditing && getMessageData?.content) {
       dispatch(setTextMessageInput(getMessageData.content));
     }
-  }, [textMessageIsEditing, getMessageData?.content]);
+  }, [textMessageIsEditing, getMessageData?.content, dispatch]);
 
   useEffect(() => {
     // Auto resize textarea
@@ -94,6 +97,9 @@ Props) {
     //   // Handled the backend. Do not assume the next id, should handle by the backend.
     // }
   }
+
+  const { startTyping, stopTyping } = useTypingIndicator(conversationId);
+  //
   const handleSendMessage = async () => {
     // if (!textMessageInput.trim() || !conversationObject?.chat_user_id) return;
     if (!textMessageInput.trim()) return;
@@ -119,7 +125,7 @@ Props) {
             receiverId: selectedConversation?.chat_user_id,
             content: trimmedMsg,
             messageType: "individual",
-          })
+          }),
         ).unwrap();
 
         //
@@ -131,7 +137,7 @@ Props) {
                 ...selectedConversation,
                 conversation_id: data?.data?.conversation_id,
                 type: data?.data?.message_type,
-              })
+              }),
             );
           }
           // Refresh datas.
@@ -144,7 +150,7 @@ Props) {
             dispatch(
               getConversationMessages({
                 conversationId,
-              })
+              }),
             );
           }
 
@@ -166,7 +172,8 @@ Props) {
           updateMessage({
             messageId: message_id,
             messageContent: trimmedMsg,
-          })
+            receiverId: receiverId,
+          }),
         ).unwrap();
         if (data?.data && data.data?.id) {
           //
@@ -177,7 +184,7 @@ Props) {
             dispatch(
               getIndividualMessages({
                 conversationId,
-              })
+              }),
             );
           //
         }
@@ -209,7 +216,18 @@ Props) {
             value={textMessageInput}
             onChange={(e) => {
               // if (conversationId) {
-              dispatch(setTextMessageInput(e.target.value));
+
+              const value = e.target.value;
+              dispatch(setTextMessageInput(value));
+
+              // ✅ Trigger typing indicator
+              if (value.trim()) {
+                // console.log("user typed.");
+                startTyping();
+              } else {
+                stopTyping();
+              }
+
               // }
             }}
             placeholder="Aa"

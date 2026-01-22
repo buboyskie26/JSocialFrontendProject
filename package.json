@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.9.2",
+    "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.1.16",
     "axios": "^1.12.2",
     "react": "^19.1.1",
@@ -19,6 +19,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.4",
     "redux-persist": "^6.0.0",
+    "socket.io-client": "^4.8.3",
     "styled-components": "^6.1.19"
   },
   "devDependencies": {

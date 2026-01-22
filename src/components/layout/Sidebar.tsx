@@ -59,7 +59,7 @@ export default function Sidebar({ conversationId }: Props) {
   ];
   const searchInputFocused = useSelector((w) => w.shared.searchInputFocused);
   const getUserRecentSearchesArray = useSelector(
-    (w) => w.recentSearches.getUserRecentSearchesArray
+    (w) => w.recentSearches.getUserRecentSearchesArray,
   );
   // console.log({ getUserRecentSearchesArray });
   const loadingSearches = useSelector((w) => w.recentSearches.loadingSearches);
@@ -87,7 +87,7 @@ export default function Sidebar({ conversationId }: Props) {
   const [sideBarSearchText, setSideBarSearchText] = useState("");
 
   const loadingUserMessages = useSelector(
-    (w) => w.messages.loadingUserMessages
+    (w) => w.messages.loadingUserMessages,
   );
   // const [loadingUserMessages, setLoadingUserMessages] = useState(true);
 
@@ -131,7 +131,7 @@ export default function Sidebar({ conversationId }: Props) {
         chat_username: item?.username,
         chat_display_name: item?.username,
         chat_profile_image: null,
-      })
+      }),
     );
 
     dispatch(setTextMessageInput(""));
@@ -145,9 +145,10 @@ export default function Sidebar({ conversationId }: Props) {
       <div className="leftColumn">
         <div
           onClick={() => {
-            if (window.confirm("Are you sure you want to open the profile?")) {
+            if (
+              window.confirm("Are you sure you want to logout? (Temporary)")
+            ) {
               // Logout
-
               const data = dispatch(logoutUser()).unwrap();
               console.log({ data });
               //
@@ -190,7 +191,7 @@ export default function Sidebar({ conversationId }: Props) {
             dispatch(
               getAllUsersBySearch({
                 searchQuery: "",
-              })
+              }),
             );
             setSideBarSearchText("");
           }}
@@ -241,7 +242,7 @@ export default function Sidebar({ conversationId }: Props) {
                                   const responseData = await dispatch(
                                     deletedRecentSearches({
                                       searchedUserId: id,
-                                    })
+                                    }),
                                   ).unwrap();
                                   console.log({ responseData });
                                   if (responseData) {
@@ -272,7 +273,7 @@ export default function Sidebar({ conversationId }: Props) {
                                   const responseData = await dispatch(
                                     addUpdateRecentSearches({
                                       searchedUserId: item.id,
-                                    })
+                                    }),
                                   ).unwrap();
                                   // console.log({ responseData });
                                   if (responseData) {

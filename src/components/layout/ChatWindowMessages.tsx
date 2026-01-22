@@ -15,10 +15,18 @@ import {
   setGetMessageData,
   setIsClickedMessageUponSearch,
   setIsUserReplying,
+  addMessagesDataArray,
   setMessagesLoading,
   setScrollToMessageId,
   setTextMessageIsEditing,
+  updateMessagesDataArray,
+  deletedMessagesDataArray,
 } from "../../app/slices/messagesSlice";
+import { getSocket } from "../../app/socket/socket";
+import TypingIndicator from "../TypingIndicator";
+import TypingSocketListener from "../TypingSocketListener";
+import RealtimeCRUDSocketLister from "../RealtimeCRUDSocketLister";
+import { useTypingIndicator } from "../../hooks/useTypingIndicator";
 
 interface Props {
   loggedInUserId: string;
@@ -31,14 +39,14 @@ export default function ChatWindowMessages({
   //
   const getMessageData = useSelector(
     (w) => w.messages.getMessageData,
-    shallowEqual
+    shallowEqual,
   );
   // console.log({ getMessageData });
   const dispatch = useDispatch();
   // console.log("ChatWindowMessages");
 
   const enteredRightSidebarText = useSelector(
-    (w) => w.messages.enteredRightSidebarText
+    (w) => w.messages.enteredRightSidebarText,
   );
 
   // Pouplate the previous messages
@@ -59,7 +67,7 @@ export default function ChatWindowMessages({
   //   useState(false);
 
   const isClickedMessageUponSearch = useSelector(
-    (w) => w.messages.isClickedMessageUponSearch
+    (w) => w.messages.isClickedMessageUponSearch,
   );
   // useEffect(() => {
   //   console.log({ isClickedMessageUponSearch });
@@ -67,12 +75,62 @@ export default function ChatWindowMessages({
   // Value of clicked message from search data list (Right div search).
   const scrollToMessageId = useSelector((w) => w.messages.scrollToMessageId);
 
-  // Loads the Conversation Messages
-  // useEffect(() => {
-  //   if (conversationId) {
-  //     dispatch(getIndividualMessages({ conversationId }));
-  //   }
-  // }, [dispatch, conversationId]);
+  const socket = getSocket();
+  //
+  useEffect(() => {
+    if (!socket) return;
+
+    // ✅ Listen for auto-join confirmation
+    socket.on("conversations:joined", (data) => {
+      console.log(`✅ Joined ${data.count} conversations`);
+      console.log("Conversation IDs:", data.conversationIds);
+    });
+    //
+    // // ✅ Listen for new messages configured in the backend controller add message
+    // socket.on("message:new", (data) => {
+    //   //
+    //   console.log("📨 New message:", data);
+    //   const socketMessage = data?.message;
+    //   // console.log({ socketMessage });
+    //   // messagesDataArray.push(socketMessage);
+    //   dispatch(addMessagesDataArray(data?.message));
+    // });
+
+    // socket.on("message:update", (data) => {
+    //   console.log("📨 Updated message:", data);
+    //   dispatch(updateMessagesDataArray(data));
+    // });
+
+    // socket.on("message:delete", (data) => {
+    //   console.log("📨 Deleted message:", data);
+    //   dispatch(deletedMessagesDataArray(data));
+    // });
+
+    socket.on("user:online", (data) => {
+      console.log("📨 Online User Id:", data);
+    });
+    //
+    //
+    return () => {
+      // socket.off("message:new");
+      // socket.off("message:update");
+      // socket.off("message:delete");
+      socket.off("user:online");
+    };
+  }, [socket, dispatch]);
+
+  //
+  useEffect(() => {
+    if (!socket) return;
+
+    // socket.on("typing:start", (data) => {
+    //   console.log(
+    //     `User ${data.userId} is typing in conversation ${data.conversationId}`
+    //   );
+    // });
+  }, [socket]);
+
+  //
 
   //// ##
   // Scroll to bottom when messages change
@@ -80,17 +138,13 @@ export default function ChatWindowMessages({
     // console.log({ scrollToMessageId });
     // if (scrollToMessageId === null) {
 
-    const messageCurrent = messageRefs.current;
-    // console.log({ messageCurrent });
-    //
-
     // Applicable only if the scrollToMessageId is not null (Has clicked upon searched.)
     // if (scrollToMessageId === null && !messageCurrent) {
 
     if (!isClickedMessageUponSearch) {
       // This is working at the scroll top only.
       // if (scrollToMessageId === null && !isClickedMessageUponSearch) {
-      console.log("DEFAULT SCROLL BOTTOM");
+      // console.log("DEFAULT SCROLL BOTTOM");
       bottomRef?.current?.scrollIntoView({ behavior: "auto" });
     }
   }, [messagesDataArray, scrollToMessageId, isClickedMessageUponSearch]);
@@ -162,7 +216,7 @@ export default function ChatWindowMessages({
           conversationId,
           beforeMessageId: firstMessageId,
           limit: 2,
-        })
+        }),
       ).unwrap();
 
       // Restore scroll position after messages are loaded
@@ -186,57 +240,6 @@ export default function ChatWindowMessages({
 
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null); // NEW: Trigger for loading more at bottom
 
-  // Todo. How can I scroll to bottom which will trigger this
-  // after API triggered, it should have spaces for scrolling to bottom.
-  const handleLoadMoreAfterv2 = useCallback(async () => {
-    //
-    if (messagesLoading || !hasMoreAfter || messagesDataArray.length === 0) {
-      return;
-    }
-
-    const lastMessageId = messagesDataArray[messagesDataArray.length - 1].id;
-    const container = messageContainerRef.current;
-    if (!container) return;
-
-    // Save scroll position before loading
-    const scrollHeightBefore = container.scrollHeight;
-    const scrollTopBefore = container.scrollTop;
-    // Calculate distance from bottom
-    const distanceFromBottom =
-      scrollHeightBefore - scrollTopBefore - container.clientHeight;
-
-    try {
-      const fetchMessagesAfter = await dispatch(
-        loadMessagesAfter({
-          conversationId,
-          afterMessageId: lastMessageId,
-        })
-      ).unwrap();
-
-      // console.log({ fetchMessagesAfter });
-
-      // Restore scroll position after messages are loaded
-      requestAnimationFrame(() => {
-        if (container) {
-          const scrollHeightAfter = container.scrollHeight;
-          // Keep the same distance from bottom
-          container.scrollTop =
-            scrollHeightAfter - container.clientHeight - distanceFromBottom;
-        }
-      });
-    } catch (error) {
-      console.error("Failed to load newer messages:", error);
-    }
-  }, [
-    messagesLoading,
-    hasMoreAfter,
-    messagesDataArray,
-    conversationId,
-    dispatch,
-  ]);
-
-  //
-
   const handleLoadMoreAfter = useCallback(async () => {
     if (messagesLoading || !hasMoreAfter || messagesDataArray.length === 0) {
       return;
@@ -258,7 +261,7 @@ export default function ChatWindowMessages({
         loadMessagesAfter({
           conversationId,
           afterMessageId: lastMessageId,
-        })
+        }),
       ).unwrap();
       // console.log({ fetchMessagesAfter });
 
@@ -348,7 +351,7 @@ export default function ChatWindowMessages({
 
     const observer = new IntersectionObserver(
       observerCallback,
-      observerOptions
+      observerOptions,
     );
 
     observer.observe(topElement);
@@ -379,11 +382,11 @@ export default function ChatWindowMessages({
             loadMessagesAround({
               conversationId,
               messageId: scrollToMessageId,
-            })
+            }),
           ).unwrap();
 
           // You can use loadMessagesData here if needed
-          console.log({ loadMessagesData });
+          // console.log({ loadMessagesData });
         } catch (error) {
           console.error(error);
         }
@@ -422,7 +425,7 @@ export default function ChatWindowMessages({
           conversationId,
           // messageId: lastMessageId,
           messageId: scrollToMessageId,
-        })
+        }),
       ).unwrap();
 
       // await dispatch(
@@ -483,7 +486,7 @@ export default function ChatWindowMessages({
       dispatch(
         loadInitialMessages({
           conversationId: conversationId as number,
-        })
+        }),
       );
     }
   }, [dispatch, conversationId]);
@@ -495,7 +498,7 @@ export default function ChatWindowMessages({
     if (!messageId) return;
     try {
       const responseData = await dispatch(
-        deleteMessage({ messageId })
+        deleteMessage({ messageId }),
       ).unwrap();
       // console.log({ responseData });
       if (responseData) {
@@ -505,7 +508,7 @@ export default function ChatWindowMessages({
           dispatch(
             getIndividualMessages({
               conversationId,
-            })
+            }),
           );
       }
     } catch (error) {
@@ -522,14 +525,14 @@ export default function ChatWindowMessages({
     item: any,
     isLastOfGroup = false,
     clickedMessageAction,
-    setClickedMessageAction
+    setClickedMessageAction,
   ) {
     //
     // const [showMenu, setShowMenu] = useState(false);
     // console.log({ clickedMessageAction });
     //
 
-    if (item?.deleted === true) return;
+    // if (item?.deleted === true) return;
 
     //
     const messageAction = (
@@ -591,7 +594,7 @@ export default function ChatWindowMessages({
           </span>
         ) : (
           <React.Fragment key={index}>{part}</React.Fragment>
-        )
+        ),
       );
     }
     //
@@ -606,6 +609,18 @@ export default function ChatWindowMessages({
     // if (hoverMessageId === item?.id) console.log({ hoverMessageId });
     // console.log({ clickedMessageAction });
 
+    function showActualMessage(item) {
+      //
+      if (item?.deleted === true) return <span>Unsent message</span>;
+
+      return highlightText(item?.content, enteredRightSidebarText);
+
+      // item?.deleted === true ? (
+      //   <span>Unsent messages</span>
+      // ) : (
+      //   highlightText(item?.content, enteredRightSidebarText)
+      // );
+    }
     //
     if (positionMessage === "left") {
       return (
@@ -632,7 +647,13 @@ export default function ChatWindowMessages({
                     }}
                   >
                     {/* {item.content} */}
-                    {highlightText(item?.content, enteredRightSidebarText)}
+
+                    {/* {item?.deleted === true ? (
+                      <span>Unsent messages</span>
+                    ) : (
+                      highlightText(item?.content, enteredRightSidebarText)
+                    )} */}
+                    {showActualMessage(item)}
                   </MessageTextDiv>
                   {/* {messageAction} */}
                   {showMessageAction}
@@ -650,7 +671,8 @@ export default function ChatWindowMessages({
                 }}
               >
                 {/* {item.content} */}
-                {highlightText(item?.content, enteredRightSidebarText)}
+                {/* {highlightText(item?.content, enteredRightSidebarText)} */}
+                {showActualMessage(item)}
               </MessageTextDiv>
               {showMessageAction}
               {/* {messageAction} */}
@@ -681,7 +703,8 @@ export default function ChatWindowMessages({
                     }}
                   >
                     {/* {item.content} */}
-                    {highlightText(item?.content, enteredRightSidebarText)}
+                    {/* {highlightText(item?.content, enteredRightSidebarText)} */}
+                    {showActualMessage(item)}
                   </MessageTextDiv>
                 </div>
               </div>
@@ -699,7 +722,9 @@ export default function ChatWindowMessages({
                 }}
               >
                 {/* {item.content} */}
-                {highlightText(item?.content, enteredRightSidebarText)}
+                {/* {highlightText(item?.content, enteredRightSidebarText)} */}
+
+                {showActualMessage(item)}
               </MessageTextDiv>
             </>
           )}
@@ -709,11 +734,17 @@ export default function ChatWindowMessages({
   }
   //
   //
+  //
   return (
     <MessengerContentStyled
       isSender={true}
       hasReplyDiv={getMessageData !== null}
     >
+      {/*  */}
+      <TypingSocketListener />
+
+      <RealtimeCRUDSocketLister conversationId={conversationId.toString()} />
+
       <div className="messageContainer" ref={messageContainerRef}>
         {/* Top sentinel div */}
         <div
@@ -756,7 +787,7 @@ export default function ChatWindowMessages({
                       item,
                       isLastOfGroup,
                       clickedMessageAction,
-                      setClickedMessageAction
+                      setClickedMessageAction,
                     )}
                   </div>
                 ) : (
@@ -774,13 +805,16 @@ export default function ChatWindowMessages({
                       item,
                       isLastOfGroup,
                       clickedMessageAction,
-                      setClickedMessageAction
+                      setClickedMessageAction,
                     )}
                   </div>
                 )}
               </React.Fragment>
             );
           })}
+        {/*  */}
+        {/* Typing Indicator */}
+        <TypingIndicator conversationId={conversationId} />
         <div ref={bottomRef} />
 
         {/* NEW: Load more trigger - placed AFTER bottomRef */}

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 // import { AuthService } from "./AuthService";
 import axios from "../../utils/axiosConfig";
+import { disconnectSocket, initializeSocket } from "../socket/socket";
 
 interface AuthState {
   user: { id: number; username: string; email: string } | null;
@@ -66,8 +67,11 @@ export const loginUser = createAsyncThunk(
       // return await AuthService.login(credentials);
       // console.log({ credentials });
       const response = await axios.post("/auth/loginUser", credentials);
-      if (response?.data?.token)
+      if (response?.data?.token) {
         localStorage.setItem("token", response.data.token);
+        // ✅ Initialize socket after login
+        initializeSocket();
+      }
 
       console.log({ response });
       return response.data; // { token, user }
@@ -92,9 +96,10 @@ export const registerUser = createAsyncThunk(
       // return await AuthService.login(credentials);
       // console.log({ credentials });
       const response = await axios.post("/auth/registerUser", credentials);
-      if (response?.data?.token)
+      if (response?.data?.token) {
         localStorage.setItem("token", response.data.token);
-
+        initializeSocket();
+      }
       console.log({ response });
       return response.data; // { token, user }
     } catch (err: any) {
@@ -144,6 +149,8 @@ export const logoutUser = createAsyncThunk(
       // return await AuthService.login(credentials);
       const response = await axios.post("/auth/logoutUser");
       localStorage.removeItem("token");
+      // ✅ Disconnect socket
+      disconnectSocket();
       return response.data;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(err.message);
