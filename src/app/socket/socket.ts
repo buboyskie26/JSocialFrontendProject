@@ -3,8 +3,8 @@ import { io, Socket } from "socket.io-client";
 const SERVER_LOCAL = "http://localhost:3000";
 const SERVER_CLOUD = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
-// const SOCKET_URL = SERVER_CLOUD || SERVER_LOCAL;
-const SOCKET_URL = SERVER_LOCAL;
+const SOCKET_URL = SERVER_CLOUD || SERVER_LOCAL;
+// const SOCKET_URL = SERVER_LOCAL;
 
 let socket = null;
 
