@@ -21,28 +21,65 @@ export const initializeSocket = () => {
     return socket;
   }
 
+  // socket = io(SOCKET_URL, {
+  //   auth: {
+  //     token: token, // ✅ Matches your backend authentication
+  //   },
+  //   withCredentials: true,
+  //   transports: ["websocket", "polling"], // Try websocket first
+  //   reconnection: true,
+  //   reconnectionDelay: 1000,
+  //   reconnectionAttempts: 5,
+  // });
+
+  // // Connection events
+  // socket.on("connect", () => {
+  //   console.log("✅ Socket connected:", socket.id);
+  // });
+
+  // socket.on("connect_error", (error) => {
+  //   console.error("❌ Socket connection error:", error.message);
+  // });
+
+  // socket.on("disconnect", (reason) => {
+  //   console.log("🔌 Socket disconnected:", reason);
+  // });
+
   socket = io(SOCKET_URL, {
     auth: {
-      token: token, // ✅ Matches your backend authentication
+      token: token,
     },
     withCredentials: true,
-    transports: ["websocket", "polling"], // Try websocket first
+    path: "/socket.io", // Explicitly set path
+    transports: ["websocket", "polling"], // Try both
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionAttempts: 5,
+    timeout: 20000, // Add timeout
   });
 
   // Connection events
   socket.on("connect", () => {
-    console.log("✅ Socket connected:", socket.id);
+    console.log("✅ Socket connected:", socket?.id);
+    console.log("🔌 Transport:", socket?.io.engine.transport.name);
   });
 
   socket.on("connect_error", (error) => {
     console.error("❌ Socket connection error:", error.message);
+    console.error("Error details:", error);
   });
 
   socket.on("disconnect", (reason) => {
     console.log("🔌 Socket disconnected:", reason);
+  });
+
+  // Debug events
+  socket.io.on("reconnect_attempt", () => {
+    console.log("🔄 Attempting to reconnect...");
+  });
+
+  socket.io.on("reconnect", () => {
+    console.log("✅ Reconnected successfully");
   });
 
   return socket;
